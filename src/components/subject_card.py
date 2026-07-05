@@ -1,7 +1,7 @@
-"""SmartAttend — Subject card component. Updated colours to #5B5FF8 palette."""
+"""SmartAttend — Subject card component redesigned in Neo-Brutalism."""
 import streamlit as st
 
-_ACCENTS = ["#5B5FF8", "#7C3AED", "#06B6D4", "#22C55E", "#F59E0B", "#EF4444"]
+_ACCENTS = ["#5865F2", "#EB459E", "#00E676", "#FFD600", "#FF1744", "#7C3AED"]
 
 
 def subject_card(
@@ -27,78 +27,99 @@ def subject_card(
 
     if pct_val is not None:
         if pct_val >= 75:
-            bar_clr, bar_bg = "#22C55E", "#DCFCE7"
+            bar_clr = "#22C55E"
         elif pct_val >= 50:
-            bar_clr, bar_bg = "#F59E0B", "#FEF3C7"
+            bar_clr = "#F59E0B"
         else:
-            bar_clr, bar_bg = "#EF4444", "#FEE2E2"
+            bar_clr = "#EF4444"
         bar_w = min(pct_val, 100)
     else:
-        bar_clr = bar_bg = ""
+        bar_clr = ""
         bar_w = 0
 
     chips = ""
     if stats:
-        chips = '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:12px;">'
+        chips = '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">'
         for icon, label, value in stats:
-            chips += f"""<div style="display:inline-flex;align-items:center;gap:4px;
-  background:#F8FAFC;border:1px solid #E2E8F0;padding:4px 9px;border-radius:6px;
-  font-size:0.75rem;font-family:'Inter',sans-serif;color:#334155;">
+            chips += f"""<div style="display:inline-flex;align-items:center;gap:6px;
+  background:#FFFFFF;border:2.5px solid #000000;padding:6px 12px;border-radius:4px;
+  font-size:0.8rem;font-family:'Outfit',sans-serif;color:#000000;
+  box-shadow: 2px 2px 0 #000000;font-weight:800;">
   <span>{icon}</span>
-  <span style="font-weight:700;color:#0F172A;">{value}</span>
-  <span style="color:#94A3B8;">{label}</span>
+  <span>{value} {label}</span>
 </div>"""
         chips += "</div>"
 
     prog = ""
     if pct_val is not None:
         prog = f"""
-<div style="margin-top:14px;">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-    <span style="font-size:0.68rem;font-weight:700;text-transform:uppercase;
-                 letter-spacing:0.06em;color:#94A3B8;font-family:'Inter',sans-serif;">
+<div style="margin-top:18px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+    <span style="font-size:0.8rem;font-weight:800;text-transform:uppercase;
+                 letter-spacing:0.04em;color:#000000;font-family:'Outfit',sans-serif;">
       Attendance
     </span>
-    <span style="font-size:0.78rem;font-weight:800;color:{bar_clr};
-                 font-family:'Inter',sans-serif;">{pct_val}%</span>
+    <span style="font-size:0.9rem;font-weight:900;color:#000000;
+                 font-family:'Outfit',sans-serif;">{pct_val}%</span>
   </div>
-  <div style="height:6px;background:{bar_bg};border-radius:100px;overflow:hidden;">
+  <div style="height:14px;background:#FFFFFF;border:2.5px solid #000000;border-radius:4px;overflow:hidden;position:relative;">
     <div style="height:100%;width:{bar_w}%;background:{bar_clr};
-                border-radius:100px;transition:width 0.5s ease;"></div>
+                border-right:2.5px solid #000000;transition:width 0.5s ease;"></div>
   </div>
 </div>"""
 
     fac_html = ""
     if faculty:
-        fac_html = (f'<span style="font-size:0.72rem;color:#64748B;'
-                    f'font-family:Inter,sans-serif;margin-top:3px;display:inline-block;">'
+        fac_html = (f'<span style="font-size:0.85rem;color:#000000;font-weight:600;'
+                    f'font-family:\'Outfit\',sans-serif;margin-top:3px;display:inline-block;'
+                    f'background:#E2E8F0;border:1.5px solid #000;padding:2px 6px;border-radius:3px;">'
                     f'👤 {faculty}</span>')
 
     uid = f"sc-{card_index}-{code}"
 
     st.markdown(f"""
 <style>
-#{uid}{{background:#fff;border:1px solid #E2E8F0;border-radius:14px;
-  padding:20px 22px 16px;margin-bottom:14px;position:relative;overflow:hidden;
-  transition:transform 0.2s ease,box-shadow 0.2s ease;cursor:default;}}
-#{uid}::before{{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
-  background:linear-gradient(180deg,{accent},{accent}99);
-  border-radius:4px 0 0 4px;}}
-#{uid}:hover{{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,0.08);}}
+#{uid} {{
+  background: #FFFFFF;
+  border: 4px solid #000000;
+  border-radius: 8px;
+  box-shadow: 6px 6px 0 #000000;
+  padding: 24px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+  cursor: default;
+}}
+
+#{uid}::before {{
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  background: {accent};
+}}
+
+#{uid}:hover {{
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0 #000000;
+}}
 </style>
 <div id="{uid}">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px;">
-    <h3 style="margin:0;font-size:0.97rem;font-weight:700;color:#0F172A;
-               font-family:'Inter',sans-serif;letter-spacing:-0.01em;
-               line-height:1.3;padding-right:10px;">{name}</h3>
-    <span style="flex-shrink:0;font-size:0.7rem;font-weight:700;
-                 background:{accent}18;color:{accent};padding:3px 9px;
-                 border-radius:100px;font-family:'Inter',sans-serif;
-                 letter-spacing:0.02em;">{code}</span>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+    <h3 style="margin:0;font-size:1.25rem;font-weight:800;color:#000000;
+               font-family:'Outfit',sans-serif;letter-spacing:-0.02em;
+               line-height:1.2;padding-right:10px;">{name}</h3>
+    <span style="flex-shrink:0;font-size:0.8rem;font-weight:800;
+                 background:{accent};color:#FFFFFF;padding:4px 8px;
+                 border:2px solid #000000;border-radius:4px;font-family:'Outfit',sans-serif;
+                 box-shadow: 2px 2px 0 #000000;">{code}</span>
   </div>
-  <div style="display:flex;align-items:center;gap:10px;margin-top:4px;flex-wrap:wrap;">
-    <span style="font-size:0.78rem;color:#64748B;font-family:'Inter',sans-serif;">
-      Section <b style="color:#334155;">{section}</b>
+  <div style="display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap;">
+    <span style="font-size:0.85rem;color:#000000;font-family:'Outfit',sans-serif;font-weight:600;">
+      Section <b style="color:#000000;font-weight:800;background:#E2E8F0;border:1.5px solid #000;padding:2px 6px;border-radius:3px;">{section}</b>
     </span>
     {fac_html}
   </div>

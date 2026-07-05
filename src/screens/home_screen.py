@@ -1,6 +1,6 @@
 """SmartAttend — Landing Page.
+Redesigned with Neo-Brutalism design system.
 Features: Face Recognition, QR Joining, Attendance Analytics, Secure Records.
-Voice Attendance removed from features list per spec.
 """
 import streamlit as st
 from src.components.header import header_home
@@ -10,120 +10,109 @@ from src.ui.base_layout import style_base_layout, style_background_home
 # ── SVG dashboard mockup ──────────────────────────────────────────────────────
 _MOCKUP = """
 <svg viewBox="0 0 540 360" xmlns="http://www.w3.org/2000/svg"
-     style="width:100%;max-width:540px;border-radius:18px;
-            box-shadow:0 28px 64px rgba(91,95,248,0.18);display:block;">
+     style="width:100%;max-width:540px;border-radius:8px;
+            border:4px solid #000000;box-shadow:6px 6px 0 #000000;display:block;">
   <!-- card bg -->
-  <rect width="540" height="360" rx="18" fill="#F8FAFC"/>
+  <rect width="540" height="360" rx="0" fill="#FAFAFA"/>
   <!-- topbar -->
-  <rect width="540" height="46" rx="0" fill="#5B5FF8"/>
+  <rect width="540" height="46" rx="0" fill="#5865F2" stroke="#000000" stroke-width="3"/>
   <!-- logo mark in bar -->
-  <rect x="14" y="13" width="20" height="20" rx="5" fill="white" opacity="0.9"/>
-  <path d="M24 16L19 18.5v4c0 2.6 1.9 5 5 5.6 3.1-.6 5-3 5-5.6v-4L24 16z"
-        stroke="#5B5FF8" stroke-width="1.2" fill="none"/>
-  <path d="M22 21l1.5 1.5L26 19" stroke="#5B5FF8" stroke-width="1.2"
+  <rect x="14" y="10" width="22" height="22" rx="4" fill="white" stroke="#000" stroke-width="2"/>
+  <path d="M25 13L20 15.5v4c0 2.6 1.9 5 5 5.6 3.1-.6 5-3 5-5.6v-4L25 13z"
+        stroke="#5865F2" stroke-width="1.2" fill="none"/>
+  <path d="M23 18l1.5 1.5L27 16" stroke="#5865F2" stroke-width="1.2"
         stroke-linecap="round" stroke-linejoin="round"/>
-  <rect x="40" y="19" width="80" height="8" rx="4" fill="white" opacity="0.65"/>
+  <rect x="44" y="17" width="80" height="8" rx="2" fill="white" stroke="#000" stroke-width="1.5"/>
   <!-- avatar pill -->
-  <rect x="460" y="14" width="66" height="18" rx="9" fill="white" opacity="0.15"/>
-  <circle cx="470" cy="23" r="7" fill="white" opacity="0.25"/>
-  <text x="481" y="27" font-size="8" fill="white" font-family="Inter,sans-serif" font-weight="600">Ankit K.</text>
+  <rect x="440" y="10" width="86" height="22" rx="4" fill="#FFD600" stroke="#000000" stroke-width="2"/>
+  <circle cx="452" cy="21" r="6" fill="white" stroke="#000" stroke-width="1.5"/>
+  <text x="463" y="25" font-size="9" fill="black" font-family="Outfit,sans-serif" font-weight="800">Ankit K.</text>
 
   <!-- stat cards -->
-  <rect x="14" y="62" width="116" height="62" rx="11" fill="white" stroke="#E2E8F0" stroke-width="1"/>
-  <rect x="14" y="118" width="116" height="3.5" rx="2" fill="#5B5FF8" opacity="0.7"/>
-  <text x="24" y="81" font-size="7.5" fill="#94A3B8" font-family="Inter,sans-serif" font-weight="700" letter-spacing="0.5">SUBJECTS</text>
-  <text x="24" y="104" font-size="24" fill="#0F172A" font-family="Inter,sans-serif" font-weight="900">6</text>
+  <rect x="14" y="62" width="116" height="62" rx="4" fill="white" stroke="#000000" stroke-width="2.5" box-shadow="2px 2px 0 #000"/>
+  <rect x="14" y="118" width="116" height="6" rx="0" fill="#5865F2" stroke="#000" stroke-width="2.5"/>
+  <text x="22" y="81" font-size="8" fill="black" font-family="Outfit,sans-serif" font-weight="900" letter-spacing="0.5">SUBJECTS</text>
+  <text x="22" y="106" font-size="24" fill="black" font-family="Outfit,sans-serif" font-weight="900">6</text>
 
-  <rect x="140" y="62" width="116" height="62" rx="11" fill="white" stroke="#E2E8F0" stroke-width="1"/>
-  <rect x="140" y="118" width="116" height="3.5" rx="2" fill="#06B6D4" opacity="0.7"/>
-  <text x="150" y="81" font-size="7.5" fill="#94A3B8" font-family="Inter,sans-serif" font-weight="700" letter-spacing="0.5">CLASSES</text>
-  <text x="150" y="104" font-size="24" fill="#0F172A" font-family="Inter,sans-serif" font-weight="900">48</text>
+  <rect x="140" y="62" width="116" height="62" rx="4" fill="white" stroke="#000000" stroke-width="2.5"/>
+  <rect x="140" y="118" width="116" height="6" rx="0" fill="#00E676" stroke="#000" stroke-width="2.5"/>
+  <text x="148" y="81" font-size="8" fill="black" font-family="Outfit,sans-serif" font-weight="900" letter-spacing="0.5">CLASSES</text>
+  <text x="148" y="106" font-size="24" fill="black" font-family="Outfit,sans-serif" font-weight="900">48</text>
 
-  <rect x="266" y="62" width="116" height="62" rx="11" fill="white" stroke="#E2E8F0" stroke-width="1"/>
-  <rect x="266" y="118" width="116" height="3.5" rx="2" fill="#7C3AED" opacity="0.7"/>
-  <text x="276" y="81" font-size="7.5" fill="#94A3B8" font-family="Inter,sans-serif" font-weight="700" letter-spacing="0.5">ATTENDED</text>
-  <text x="276" y="104" font-size="24" fill="#0F172A" font-family="Inter,sans-serif" font-weight="900">42</text>
+  <rect x="266" y="62" width="116" height="62" rx="4" fill="white" stroke="#000000" stroke-width="2.5"/>
+  <rect x="266" y="118" width="116" height="6" rx="0" fill="#EB459E" stroke="#000" stroke-width="2.5"/>
+  <text x="274" y="81" font-size="8" fill="black" font-family="Outfit,sans-serif" font-weight="900" letter-spacing="0.5">ATTENDED</text>
+  <text x="274" y="106" font-size="24" fill="black" font-family="Outfit,sans-serif" font-weight="900">42</text>
 
-  <rect x="392" y="62" width="134" height="62" rx="11" fill="#EEEFFF" stroke="#C7C9FD" stroke-width="1"/>
-  <rect x="392" y="118" width="134" height="3.5" rx="2" fill="#22C55E" opacity="0.8"/>
-  <text x="402" y="81" font-size="7.5" fill="#64748B" font-family="Inter,sans-serif" font-weight="700" letter-spacing="0.5">ATTENDANCE</text>
-  <text x="402" y="104" font-size="24" fill="#5B5FF8" font-family="Inter,sans-serif" font-weight="900">87%</text>
+  <rect x="392" y="62" width="134" height="62" rx="4" fill="#FFFFFF" stroke="#000000" stroke-width="2.5"/>
+  <rect x="392" y="118" width="134" height="6" rx="0" fill="#FFD600" stroke="#000" stroke-width="2.5"/>
+  <text x="400" y="81" font-size="8" fill="black" font-family="Outfit,sans-serif" font-weight="900" letter-spacing="0.5">ATTENDANCE</text>
+  <text x="400" y="106" font-size="24" fill="#5865F2" font-family="Outfit,sans-serif" font-weight="900">87%</text>
 
   <!-- subject cards -->
-  <rect x="14" y="140" width="248" height="72" rx="11" fill="white" stroke="#E2E8F0" stroke-width="1"/>
-  <rect x="14" y="140" width="4" height="72" rx="2" fill="#5B5FF8"/>
-  <text x="26" y="158" font-size="9" fill="#0F172A" font-family="Inter,sans-serif" font-weight="700">Data Structures &amp; Algorithms</text>
-  <rect x="26" y="163" width="44" height="10" rx="100" fill="#EEEFFF"/>
-  <text x="48" y="171" text-anchor="middle" font-size="7" fill="#5B5FF8" font-family="Inter,sans-serif" font-weight="700">CS301</text>
-  <text x="26" y="183" font-size="7" fill="#94A3B8" font-family="Inter,sans-serif">Section A · 82% attendance</text>
-  <rect x="26" y="196" width="224" height="5" rx="100" fill="#F1F5F9"/>
-  <rect x="26" y="196" width="184" height="5" rx="100" fill="#22C55E"/>
+  <rect x="14" y="140" width="248" height="72" rx="4" fill="white" stroke="#000000" stroke-width="2.5"/>
+  <rect x="14" y="140" width="6" height="72" rx="0" fill="#5865F2"/>
+  <text x="28" y="158" font-size="10" fill="black" font-family="Outfit,sans-serif" font-weight="900">Data Structures &amp; Algorithms</text>
+  <rect x="28" y="166" width="46" height="12" rx="3" fill="#5865F2" stroke="#000" stroke-width="1.5"/>
+  <text x="51" y="175" text-anchor="middle" font-size="8" fill="white" font-family="Outfit,sans-serif" font-weight="900">CS301</text>
+  <text x="28" y="192" font-size="8.5" fill="#333333" font-family="Outfit,sans-serif" font-weight="700">Section A · 82% attendance</text>
 
-  <rect x="276" y="140" width="250" height="72" rx="11" fill="white" stroke="#E2E8F0" stroke-width="1"/>
-  <rect x="276" y="140" width="4" height="72" rx="2" fill="#7C3AED"/>
-  <text x="288" y="158" font-size="9" fill="#0F172A" font-family="Inter,sans-serif" font-weight="700">Database Management Systems</text>
-  <rect x="288" y="163" width="44" height="10" rx="100" fill="#F5F3FF"/>
-  <text x="310" y="171" text-anchor="middle" font-size="7" fill="#7C3AED" font-family="Inter,sans-serif" font-weight="700">CS405</text>
-  <text x="288" y="183" font-size="7" fill="#94A3B8" font-family="Inter,sans-serif">Section B · 60% attendance</text>
-  <rect x="288" y="196" width="226" height="5" rx="100" fill="#F1F5F9"/>
-  <rect x="288" y="196" width="136" height="5" rx="100" fill="#F59E0B"/>
+  <rect x="276" y="140" width="250" height="72" rx="4" fill="white" stroke="#000000" stroke-width="2.5"/>
+  <rect x="276" y="140" width="6" height="72" rx="0" fill="#EB459E"/>
+  <text x="290" y="158" font-size="10" fill="black" font-family="Outfit,sans-serif" font-weight="900">Database Management Systems</text>
+  <rect x="290" y="166" width="46" height="12" rx="3" fill="#EB459E" stroke="#000" stroke-width="1.5"/>
+  <text x="313" y="175" text-anchor="middle" font-size="8" fill="white" font-family="Outfit,sans-serif" font-weight="900">CS405</text>
+  <text x="290" y="192" font-size="8.5" fill="#333333" font-family="Outfit,sans-serif" font-weight="700">Section B · 60% attendance</text>
 
   <!-- analytics mini chart -->
-  <rect x="14" y="226" width="300" height="120" rx="11" fill="white" stroke="#E2E8F0" stroke-width="1"/>
-  <text x="24" y="244" font-size="8" fill="#0F172A" font-family="Inter,sans-serif" font-weight="700">Attendance Trend</text>
+  <rect x="14" y="226" width="300" height="120" rx="4" fill="white" stroke="#000000" stroke-width="2.5"/>
+  <text x="24" y="244" font-size="9" fill="black" font-family="Outfit,sans-serif" font-weight="900">Attendance Trend</text>
   <!-- bar chart -->
-  <rect x="30"  y="315" width="18" height="50" rx="4" fill="#5B5FF8" opacity="0.2"/>
-  <rect x="30"  y="295" width="18" height="20" rx="4" fill="#5B5FF8" opacity="0.5"/>
-  <rect x="30"  y="265" width="18" height="30" rx="4" fill="#5B5FF8"/>
-  <rect x="58"  y="305" width="18" height="60" rx="4" fill="#5B5FF8" opacity="0.2"/>
-  <rect x="58"  y="285" width="18" height="20" rx="4" fill="#5B5FF8" opacity="0.5"/>
-  <rect x="58"  y="260" width="18" height="25" rx="4" fill="#5B5FF8"/>
-  <rect x="86"  y="310" width="18" height="55" rx="4" fill="#5B5FF8" opacity="0.2"/>
-  <rect x="86"  y="275" width="18" height="35" rx="4" fill="#5B5FF8" opacity="0.5"/>
-  <rect x="86"  y="258" width="18" height="17" rx="4" fill="#5B5FF8"/>
-  <rect x="114" y="300" width="18" height="65" rx="4" fill="#5B5FF8" opacity="0.2"/>
-  <rect x="114" y="278" width="18" height="22" rx="4" fill="#5B5FF8" opacity="0.5"/>
-  <rect x="114" y="256" width="18" height="22" rx="4" fill="#5B5FF8"/>
-  <rect x="142" y="295" width="18" height="70" rx="4" fill="#5B5FF8" opacity="0.2"/>
-  <rect x="142" y="268" width="18" height="27" rx="4" fill="#5B5FF8" opacity="0.5"/>
-  <rect x="142" y="253" width="18" height="15" rx="4" fill="#22C55E"/>
+  <rect x="30"  y="280" width="18" height="35" rx="2" fill="#5865F2" stroke="#000" stroke-width="1.5"/>
+  <rect x="58"  y="265" width="18" height="50" rx="2" fill="#5865F2" stroke="#000" stroke-width="1.5"/>
+  <rect x="86"  y="290" width="18" height="25" rx="2" fill="#5865F2" stroke="#000" stroke-width="1.5"/>
+  <rect x="114" y="270" width="18" height="45" rx="2" fill="#5865F2" stroke="#000" stroke-width="1.5"/>
+  <rect x="142" y="255" width="18" height="60" rx="2" fill="#22C55E" stroke="#000" stroke-width="1.5"/>
   <!-- x labels -->
-  <text x="39"  y="330" text-anchor="middle" font-size="6" fill="#94A3B8" font-family="Inter">Jan</text>
-  <text x="67"  y="330" text-anchor="middle" font-size="6" fill="#94A3B8" font-family="Inter">Feb</text>
-  <text x="95"  y="330" text-anchor="middle" font-size="6" fill="#94A3B8" font-family="Inter">Mar</text>
-  <text x="123" y="330" text-anchor="middle" font-size="6" fill="#94A3B8" font-family="Inter">Apr</text>
-  <text x="151" y="330" text-anchor="middle" font-size="6" fill="#94A3B8" font-family="Inter">May</text>
+  <text x="39"  y="330" text-anchor="middle" font-size="7.5" fill="black" font-family="Outfit" font-weight="800">Jan</text>
+  <text x="67"  y="330" text-anchor="middle" font-size="7.5" fill="black" font-family="Outfit" font-weight="800">Feb</text>
+  <text x="95"  y="330" text-anchor="middle" font-size="7.5" fill="black" font-family="Outfit" font-weight="800">Mar</text>
+  <text x="123" y="330" text-anchor="middle" font-size="7.5" fill="black" font-family="Outfit" font-weight="800">Apr</text>
+  <text x="151" y="330" text-anchor="middle" font-size="7.5" fill="black" font-family="Outfit" font-weight="800">May</text>
 
   <!-- activity feed -->
-  <rect x="328" y="226" width="198" height="120" rx="11" fill="white" stroke="#E2E8F0" stroke-width="1"/>
-  <text x="338" y="244" font-size="8" fill="#0F172A" font-family="Inter,sans-serif" font-weight="700">Recent Activity</text>
-  <circle cx="342" cy="262" r="6" fill="#DCFCE7"/>
-  <text x="342" y="265" text-anchor="middle" font-size="6" fill="#22C55E">✓</text>
-  <text x="354" y="265" font-size="7" fill="#334155" font-family="Inter">Present — DSA · 09:15</text>
-  <circle cx="342" cy="280" r="6" fill="#DCFCE7"/>
-  <text x="342" y="283" text-anchor="middle" font-size="6" fill="#22C55E">✓</text>
-  <text x="354" y="283" font-size="7" fill="#334155" font-family="Inter">Present — DBMS · 11:00</text>
-  <circle cx="342" cy="298" r="6" fill="#FEE2E2"/>
-  <text x="342" y="301" text-anchor="middle" font-size="6" fill="#EF4444">✗</text>
-  <text x="354" y="301" font-size="7" fill="#334155" font-family="Inter">Absent — CN · 14:00</text>
-  <circle cx="342" cy="316" r="6" fill="#DCFCE7"/>
-  <text x="342" y="319" text-anchor="middle" font-size="6" fill="#22C55E">✓</text>
-  <text x="354" y="319" font-size="7" fill="#334155" font-family="Inter">Present — OS · 16:00</text>
+  <rect x="328" y="226" width="198" height="120" rx="4" fill="white" stroke="#000000" stroke-width="2.5"/>
+  <text x="338" y="244" font-size="9" fill="black" font-family="Outfit,sans-serif" font-weight="900">Recent Activity</text>
+  <rect x="338" y="256" width="10" height="10" rx="2" fill="#22C55E" stroke="#000" stroke-width="1.5"/>
+  <text x="343" y="264" text-anchor="middle" font-size="8" fill="white" font-weight="900">✓</text>
+  <text x="354" y="264" font-size="8.5" fill="black" font-family="Outfit" font-weight="700">Present — DSA · 09:15</text>
+  
+  <rect x="338" y="274" width="10" height="10" rx="2" fill="#22C55E" stroke="#000" stroke-width="1.5"/>
+  <text x="343" y="282" text-anchor="middle" font-size="8" fill="white" font-weight="900">✓</text>
+  <text x="354" y="282" font-size="8.5" fill="black" font-family="Outfit" font-weight="700">Present — DBMS · 11:00</text>
+
+  <rect x="338" y="292" width="10" height="10" rx="2" fill="#EF4444" stroke="#000" stroke-width="1.5"/>
+  <text x="343" y="300" text-anchor="middle" font-size="8" fill="white" font-weight="900">✗</text>
+  <text x="354" y="300" font-size="8.5" fill="black" font-family="Outfit" font-weight="700">Absent — CN · 14:00</text>
+
+  <rect x="338" y="310" width="10" height="10" rx="2" fill="#22C55E" stroke="#000" stroke-width="1.5"/>
+  <text x="343" y="318" text-anchor="middle" font-size="8" fill="white" font-weight="900">✓</text>
+  <text x="354" y="318" font-size="8.5" fill="black" font-family="Outfit" font-weight="700">Present — OS · 16:00</text>
 </svg>"""
 
 
 # ── Reusable HTML helpers ─────────────────────────────────────────────────────
 def _section(eyebrow, title, subtitle=""):
-    sub_tag = (f'<div style="font-size:0.9rem;color:#64748B;text-align:center;'
+    sub_tag = (f'<div style="font-size:0.95rem;color:#333333;text-align:center;'
                f'max-width:520px;margin:0 auto 2.5rem;line-height:1.65;'
-               f'font-family:Inter,sans-serif;">{subtitle}</div>') if subtitle else ""
+               f'font-family:\'Outfit\',sans-serif;font-weight:600;">{subtitle}</div>') if subtitle else ""
     return f"""
-<div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;
-  letter-spacing:0.1em;color:#5B5FF8;text-align:center;
-  font-family:'Inter',sans-serif;margin-bottom:8px;margin-top:4rem;">{eyebrow}</div>
-<div style="font-size:clamp(1.55rem,3vw,2.05rem);font-weight:900;letter-spacing:-0.04em;
-  color:#0F172A;text-align:center;margin-bottom:0.6rem;
-  font-family:'Inter',sans-serif;">{title}</div>
+<div style="font-size:0.85rem;font-weight:800;text-transform:uppercase;
+  letter-spacing:0.08em;color:#5865F2;text-align:center;
+  font-family:\'Outfit\',sans-serif;margin-bottom:8px;margin-top:4rem;">{eyebrow}</div>
+<div style="font-size:clamp(1.8rem,3vw,2.5rem);font-weight:900;letter-spacing:-0.03em;
+  color:#000000;text-align:center;margin-bottom:0.6rem;text-transform:uppercase;
+  font-family:\'Climate Crisis\',sans-serif;line-height:1.1;">{title}</div>
 {sub_tag}"""
 
 
@@ -137,38 +126,650 @@ def home_screen():
     # ════════════════════════════════════════════════════════════════════════
     st.markdown("""
 <style>
-.hero-badge{display:inline-flex;align-items:center;gap:7px;background:#EEEFFF;
-  color:#5B5FF8;border:1px solid #C7C9FD;padding:5px 14px;border-radius:100px;
-  font-size:0.75rem;font-weight:700;letter-spacing:0.03em;
-  font-family:'Inter',sans-serif;margin-bottom:1.5rem;}
-.hero-dot{width:7px;height:7px;background:#5B5FF8;border-radius:50%;
+/* --- Background Grid Pattern with spotlight glow --- */
+.stApp {
+  background-color: #FAFAFA !important;
+  background-image: 
+    radial-gradient(circle at 75% 25%, rgba(88, 101, 242, 0.06) 0%, transparent 55%),
+    radial-gradient(#e0e0e0 1.5px, transparent 1.5px) !important;
+  background-size: 100% 100%, 24px 24px !important;
+}
+
+/* --- Hero Stagger FadeUp --- */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.hero-badge-wrap {
+  animation: fadeUp 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 100ms;
+}
+.hero-h1-wrap {
+  animation: fadeUp 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 250ms;
+}
+.hero-sub-wrap {
+  animation: fadeUp 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 400ms;
+}
+div[data-testid="stColumn"]:nth-child(1) .stButton {
+  animation: fadeUp 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 550ms;
+}
+.trust-indicators-row {
+  animation: fadeUp 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 650ms;
+}
+
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:#FFD600;
+  color:#000000;border:2.5px solid #000000;padding:6px 14px;border-radius:4px;
+  font-size:0.8rem;font-weight:800;letter-spacing:0.03em;
+  font-family:'Outfit',sans-serif;margin-bottom:1.5rem;box-shadow:2px 2px 0 #000000;}
+.hero-dot{width:8px;height:8px;background:#000000;border-radius:50%;
   animation:hpulse 2s infinite;}
 @keyframes hpulse{0%,100%{opacity:1;}50%{opacity:0.35;}}
-.hero-h1{font-size:clamp(2.2rem,4.5vw,3.55rem)!important;font-weight:900!important;
-  letter-spacing:-0.05em!important;line-height:1.06!important;
-  color:#0F172A!important;margin-bottom:1.25rem!important;}
-.hero-accent{background:linear-gradient(135deg,#5B5FF8,#7C3AED);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.hero-sub{font-size:1.05rem!important;color:#475569!important;
-  line-height:1.65!important;max-width:480px;margin-bottom:2rem!important;}
-.trust-row{display:flex;align-items:center;gap:10px;margin-top:1.25rem;}
-.trust-avs{display:flex;}
-.trust-av{width:28px;height:28px;border-radius:50%;border:2px solid #fff;
-  margin-left:-8px;font-size:0.62rem;font-weight:800;font-family:'Inter',sans-serif;
-  display:flex;align-items:center;justify-content:center;color:#fff;}
-.trust-txt{font-size:0.78rem;color:#64748B;font-family:'Inter',sans-serif;}
-.trust-txt b{color:#0F172A;}
+
+.hero-h1 {
+  font-family: 'Climate Crisis', display, sans-serif !important;
+  font-size: clamp(2.1rem, 4.7vw, 3.8rem) !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.01em !important;
+  line-height: 1.15 !important;
+  color: #000000 !important;
+  margin-bottom: 1.5rem !important;
+  text-transform: uppercase;
+}
+.hero-accent{color:#5865F2;}
+.hero-sub{font-size:1.05rem!important;color:#333333!important;
+  line-height:1.65!important;max-width:520px;margin-bottom:2rem!important;
+  font-family:'Outfit',sans-serif!important;font-weight:600;}
+
+/* --- Button custom visual overrides --- */
+div.stButton > button {
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+div.stButton > button:hover {
+  transform: translate(-3px, -3px) !important;
+  box-shadow: 6px 6px 0 #111111 !important;
+}
+div.stButton > button:active {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 1px 1px 0 #111111 !important;
+}
+
+/* --- Hero Right Preview Container & Floating elements --- */
+.preview-container {
+  position: relative;
+  width: 100%;
+  max-width: 540px;
+  margin: 0 auto;
+  animation: fadeUp 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 350ms;
+}
+
+.floating-chip {
+  position: absolute;
+  border: 2.5px solid #111111;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  border-radius: 4px;
+  box-shadow: 2.5px 2.5px 0 #111111;
+  z-index: 10;
+  font-family: 'Outfit', sans-serif;
+}
+.chip-1 {
+  top: -15px;
+  left: -25px;
+  background: #FACC15;
+  color: #111111;
+  animation: float1 4s infinite ease-in-out;
+}
+.chip-2 {
+  bottom: 120px;
+  left: -35px;
+  background: #5865F2;
+  color: #ffffff;
+  animation: float2 5s infinite ease-in-out;
+}
+.chip-3 {
+  top: 40px;
+  right: -30px;
+  background: #22C55E;
+  color: #ffffff;
+  animation: float3 4.5s infinite ease-in-out;
+}
+.chip-4 {
+  bottom: 30px;
+  right: -25px;
+  background: #EB459E;
+  color: #ffffff;
+  animation: float1 4.8s infinite ease-in-out;
+}
+
+@media (max-width: 1024px) {
+  .floating-chip {
+    display: none !important;
+  }
+}
+
+@keyframes float1 {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-6px) rotate(1deg); }
+}
+@keyframes float2 {
+  0%, 100% { transform: translateY(0) rotate(2deg); }
+  50% { transform: translateY(-8px) rotate(-2deg); }
+}
+@keyframes float3 {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-7px) rotate(2deg); }
+}
+
+/* Dashboard Window override */
+.dashboard-window {
+  background: #ffffff;
+  border: 4px solid #111111;
+  border-radius: 8px;
+  box-shadow: 6px 6px 0 #111111;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  animation: floatCard 6s infinite ease-in-out;
+}
+
+@keyframes floatCard {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.window-header {
+  background: #111111;
+  color: #ffffff;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 3px solid #111111;
+}
+.window-dots {
+  display: flex;
+  gap: 6px;
+}
+.window-dots .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.window-dots .dot.red { background: #EF4444; border: 1px solid #000; }
+.window-dots .dot.yellow { background: #FACC15; border: 1px solid #000; }
+.window-dots .dot.green { background: #22C55E; border: 1px solid #000; }
+
+.window-title {
+  font-size: 0.7rem;
+  font-weight: 800;
+  font-family: monospace;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+}
+
+.window-status {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #22C55E;
+  font-family: monospace;
+  animation: pulseOpacity 1.5s infinite alternate;
+}
+
+@keyframes pulseOpacity {
+  0% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+.window-body {
+  display: flex;
+  background: #ffffff;
+  height: 380px;
+}
+
+.window-sidebar {
+  width: 40px;
+  background: #f1f5f9;
+  border-right: 2px solid #111111;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 12px;
+  gap: 12px;
+}
+.window-sidebar .sb-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+.window-sidebar .sb-icon.active {
+  color: #5865F2;
+  background: #e2e8f0;
+  border: 1.5px solid #111111;
+  border-radius: 4px;
+}
+
+.window-main {
+  flex-grow: 1;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  height: 100%;
+}
+
+@media(max-width: 600px) {
+  .window-body {
+    height: auto;
+    flex-direction: column;
+  }
+  .window-sidebar {
+    width: 100%;
+    height: 36px;
+    flex-direction: row;
+    justify-content: center;
+    border-right: none;
+    border-bottom: 2px solid #111111;
+    padding-top: 0;
+    gap: 16px;
+  }
+  .window-main {
+    grid-template-columns: 1fr;
+  }
+}
+
+.webcam-viewport {
+  position: relative;
+  background: #E8ECEF;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 2px solid #111111;
+  height: 100%;
+}
+@media(max-width: 600px) {
+  .webcam-viewport {
+    border-right: none;
+    border-bottom: 2px solid #111111;
+    height: 220px;
+  }
+}
+
+.webcam-grid {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, rgba(0,0,0,0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0,0,0,0.06) 1px, transparent 1px);
+  background-size: 16px 16px;
+  pointer-events: none;
+}
+
+.webcam-avatar-container {
+  position: relative;
+  width: 130px;
+  height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.webcam-avatar {
+  width: 100px;
+  height: 100px;
+}
+
+.face-box {
+  position: absolute;
+  inset: 8px;
+  border: 3px solid #22C55E;
+  border-radius: 6px;
+  animation: facePulse 2.5s infinite ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes facePulse {
+  0%, 100% {
+    transform: scale(1);
+    border-color: #22C55E;
+    box-shadow: 0 0 0px rgba(34, 197, 94, 0);
+  }
+  50% {
+    transform: scale(1.03);
+    border-color: #5865F2;
+    box-shadow: 0 0 8px rgba(88, 101, 242, 0.4);
+  }
+}
+
+.face-box .corner {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 2px solid #22C55E;
+}
+.face-box .corner.tl { top: -2px; left: -2px; border-right: 0; border-bottom: 0; }
+.face-box .corner.tr { top: -2px; right: -2px; border-left: 0; border-bottom: 0; }
+.face-box .corner.bl { bottom: -2px; left: -2px; border-right: 0; border-top: 0; }
+.face-box .corner.br { bottom: -2px; right: -2px; border-left: 0; border-top: 0; }
+
+.face-tag {
+  position: absolute;
+  bottom: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #22C55E;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1.5px solid #111111;
+  white-space: nowrap;
+  box-shadow: 1.5px 1.5px 0 #111111;
+  font-family: 'Outfit', sans-serif;
+}
+
+.scanner-bar {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #22C55E, transparent);
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.7);
+  animation: scanMove 4s infinite ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes scanMove {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(380px); }
+  100% { transform: translateY(0); }
+}
+
+.live-indicator {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(17, 17, 17, 0.85);
+  color: #ffffff;
+  padding: 3px 6px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  font-family: monospace;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #111111;
+}
+
+.live-dot {
+  width: 5px;
+  height: 5px;
+  background: #EF4444;
+  border-radius: 50%;
+  animation: liveBlink 1s infinite alternate;
+}
+
+@keyframes liveBlink {
+  0% { opacity: 0.3; }
+  100% { opacity: 1; }
+}
+
+.success-popup {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: #FFFFFF;
+  border: 2px solid #111111;
+  border-radius: 4px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 2px 2px 0 #111111;
+  animation: popupSlide 4s infinite ease-in-out;
+  z-index: 10;
+  font-family: 'Outfit', sans-serif;
+}
+
+@keyframes popupSlide {
+  0%, 15% { transform: translateY(50px); opacity: 0; }
+  20%, 80% { transform: translateY(0); opacity: 1; }
+  85%, 100% { transform: translateY(50px); opacity: 0; }
+}
+
+.success-icon {
+  width: 14px;
+  height: 14px;
+  background: #22C55E;
+  border: 1px solid #111111;
+  border-radius: 50%;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.6rem;
+}
+
+.success-title {
+  font-size: 0.6rem;
+  font-weight: 900;
+  color: #22C55E;
+  letter-spacing: 0.02em;
+}
+.success-sub {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: #555555;
+}
+
+/* Right Split Pane: Details + Feed */
+.right-pane {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-left: 2px solid #111111;
+  height: 100%;
+}
+@media(max-width: 600px) {
+  .right-pane {
+    border-left: none;
+    border-top: 2px solid #111111;
+  }
+}
+
+.verification-panel {
+  padding: 14px;
+  border-bottom: 2px solid #111111;
+  font-family: 'Outfit', sans-serif;
+  text-align: left;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.05em;
+}
+
+.verified-indicator {
+  background: rgba(34, 197, 94, 0.12);
+  color: #22C55E;
+  border: 1.5px solid #22C55E;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vi-dot {
+  width: 5px;
+  height: 5px;
+  background: #22C55E;
+  border-radius: 50%;
+}
+
+.panel-title {
+  font-size: 0.9rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #111111;
+  letter-spacing: -0.01em;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.panel-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail-label {
+  font-size: 0.65rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.detail-val {
+  font-size: 0.8rem;
+  color: #111111;
+  font-weight: 800;
+}
+
+.detail-val.status-present {
+  color: #22C55E;
+}
+
+/* Activity Feed section */
+.activity-feed {
+  padding: 14px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Outfit', sans-serif;
+  text-align: left;
+}
+
+.feed-title {
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #111111;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  max-height: 140px;
+}
+
+.feed-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1.5px solid #111111;
+  font-size: 0.7rem;
+  font-weight: 800;
+  font-family: monospace;
+}
+
+.feed-item.present {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #22C55E;
+}
+
+.feed-item.absent {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #EF4444;
+}
+
+.feed-time {
+  color: #64748b;
+}
+.feed-name {
+  color: #111111;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+}
+
+.trust-indicators-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px 20px;
+  margin-top: 1.5rem;
+}
+.trust-indicator-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #111111;
+}
+.ti-check {
+  width: 16px;
+  height: 16px;
+}
 </style>
 <div style="padding:3.5rem 0 1rem;">
-  <div class="hero-badge">
-    <span class="hero-dot"></span>
-    AI-Powered &nbsp;·&nbsp; Face Recognition &nbsp;·&nbsp; QR Attendance
+  <div class="hero-badge-wrap">
+    <div class="hero-badge">
+      <span class="hero-dot"></span>
+      AI-Powered &nbsp;·&nbsp; Face Recognition &nbsp;·&nbsp; QR Attendance
+    </div>
   </div>
-  <h1 class="hero-h1">Attendance in<br/><span class="hero-accent">Seconds.</span></h1>
-  <p class="hero-sub">
-    SmartAttend automates college attendance using AI facial recognition and QR codes —
-    no paper, no manual roll call, no proxy.
-  </p>
+  <div class="hero-h1-wrap">
+    <h1 class="hero-h1">Attendance in<br/><span class="hero-accent">Seconds</span>.</h1>
+  </div>
+  <div class="hero-sub-wrap">
+    <p class="hero-sub">
+      SmartAttend automates college attendance using AI facial recognition and QR codes —
+      no paper, no manual roll call, no proxy.
+    </p>
+  </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -184,14 +785,23 @@ def home_screen():
                 st.session_state["login_type"] = "teacher"
                 st.rerun()
         st.markdown("""
-<div class="trust-row">
-  <div class="trust-avs">
-    <div class="trust-av" style="background:#5B5FF8;margin-left:0;">RK</div>
-    <div class="trust-av" style="background:#7C3AED;">PS</div>
-    <div class="trust-av" style="background:#06B6D4;">AM</div>
-    <div class="trust-av" style="background:#22C55E;">VJ</div>
+<div class="trust-indicators-row">
+  <div class="trust-indicator-item">
+    <svg class="ti-check" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22C55E" stroke="#111111" stroke-width="2"/><path d="M8 12l3 3 5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Face Recognition</span>
   </div>
-  <span class="trust-txt"><b>10,000+</b> students using SmartAttend</span>
+  <div class="trust-indicator-item">
+    <svg class="ti-check" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22C55E" stroke="#111111" stroke-width="2"/><path d="M8 12l3 3 5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>QR Attendance</span>
+  </div>
+  <div class="trust-indicator-item">
+    <svg class="ti-check" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22C55E" stroke="#111111" stroke-width="2"/><path d="M8 12l3 3 5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Anti Proxy</span>
+  </div>
+  <div class="trust-indicator-item">
+    <svg class="ti-check" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22C55E" stroke="#111111" stroke-width="2"/><path d="M8 12l3 3 5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Under 3 Seconds</span>
+  </div>
 </div>""", unsafe_allow_html=True)
 
     with rc:
@@ -200,21 +810,184 @@ def home_screen():
     # ── Stats band ───────────────────────────────────────────────────────────
     st.markdown("""
 <style>
-.stats-band{background:linear-gradient(135deg,#5B5FF8 0%,#7C3AED 100%);
-  border-radius:18px;padding:2.25rem 2.5rem;margin:3.5rem 0 2rem;
-  display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;}
-.sb-item{text-align:center;}
-.sb-val{font-size:2rem;font-weight:900;color:#fff;letter-spacing:-0.04em;
-  display:block;font-family:'Inter',sans-serif;}
-.sb-lbl{font-size:0.72rem;color:rgba(255,255,255,0.62);font-weight:500;
-  font-family:'Inter',sans-serif;letter-spacing:0.03em;margin-top:2px;}
-@media(max-width:600px){.stats-band{grid-template-columns:repeat(2,1fr);}}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin: 3.5rem 0 2rem;
+}
+
+@media(max-width: 900px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media(max-width: 500px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat-card {
+  background: #FFFFFF;
+  border: 3px solid #111111;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+  animation: scaleUp 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.stat-card:nth-child(1) { animation-delay: 600ms; }
+.stat-card:nth-child(2) { animation-delay: 700ms; }
+.stat-card:nth-child(3) { animation-delay: 800ms; }
+.stat-card:nth-child(4) { animation-delay: 900ms; }
+
+/* Custom Shadows and Border Color accents for distinct look */
+.stat-card.card-indigo {
+  box-shadow: 4px 4px 0 #5865F2;
+}
+.stat-card.card-indigo:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #5865F2;
+}
+.stat-card.card-indigo .sc-icon-wrap {
+  background: rgba(88, 101, 242, 0.1);
+  color: #5865F2;
+  border-color: #5865F2;
+}
+
+.stat-card.card-pink {
+  box-shadow: 4px 4px 0 #EB459E;
+}
+.stat-card.card-pink:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #EB459E;
+}
+.stat-card.card-pink .sc-icon-wrap {
+  background: rgba(235, 69, 158, 0.1);
+  color: #EB459E;
+  border-color: #EB459E;
+}
+
+.stat-card.card-yellow {
+  box-shadow: 4px 4px 0 #FFD600;
+}
+.stat-card.card-yellow:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #FFD600;
+}
+.stat-card.card-yellow .sc-icon-wrap {
+  background: rgba(255, 214, 0, 0.15);
+  color: #FFD600;
+  border-color: #FFD600;
+}
+
+.stat-card.card-green {
+  box-shadow: 4px 4px 0 #22C55E;
+}
+.stat-card.card-green:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #22C55E;
+}
+.stat-card.card-green .sc-icon-wrap {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22C55E;
+  border-color: #22C55E;
+}
+
+.sc-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border: 2px solid #111111;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-content {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.sc-val {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #111111;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  font-family: 'Outfit', sans-serif;
+}
+
+.sc-lbl {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #111111;
+  font-family: 'Outfit', sans-serif;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+
+.sc-desc {
+  font-size: 0.65rem;
+  color: #64748b;
+  font-weight: 500;
+  margin-top: 1px;
+}
 </style>
-<div class="stats-band">
-  <div class="sb-item"><span class="sb-val">10K+</span><span class="sb-lbl">Students Registered</span></div>
-  <div class="sb-item"><span class="sb-val">500+</span><span class="sb-lbl">Classes Daily</span></div>
-  <div class="sb-item"><span class="sb-val">98%</span><span class="sb-lbl">Recognition Accuracy</span></div>
-  <div class="sb-item"><span class="sb-val">&lt;3s</span><span class="sb-lbl">Avg. Scan Time</span></div>
+<div class="stats-grid">
+  <!-- Card 1 -->
+  <div class="stat-card card-indigo">
+    <div class="sc-icon-wrap">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+    <div class="sc-content">
+      <span class="sc-val">10,000+</span>
+      <span class="sc-lbl">Students</span>
+      <span class="sc-desc">Active enrollments</span>
+    </div>
+  </div>
+  
+  <!-- Card 2 -->
+  <div class="stat-card card-pink">
+    <div class="sc-icon-wrap">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>
+    </div>
+    <div class="sc-content">
+      <span class="sc-val">50+</span>
+      <span class="sc-lbl">Institutions</span>
+      <span class="sc-desc">Colleges & Universities</span>
+    </div>
+  </div>
+
+  <!-- Card 3 -->
+  <div class="stat-card card-yellow">
+    <div class="sc-icon-wrap">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    </div>
+    <div class="sc-content">
+      <span class="sc-val">98%</span>
+      <span class="sc-lbl">Accuracy</span>
+      <span class="sc-desc">AI face matching</span>
+    </div>
+  </div>
+
+  <!-- Card 4 -->
+  <div class="stat-card card-green">
+    <div class="sc-icon-wrap">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </div>
+    <div class="sc-content">
+      <span class="sc-val">&lt;3 sec</span>
+      <span class="sc-lbl">Time</span>
+      <span class="sc-desc">Avg. attendance scan</span>
+    </div>
+  </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -226,52 +999,54 @@ def home_screen():
                 unsafe_allow_html=True)
     st.markdown("""
 <style>
-.feat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:1rem;}
+.feat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-bottom:1rem;}
 @media(max-width:600px){.feat-grid{grid-template-columns:1fr;}}
-.feat-card{background:#fff;border:1px solid #E2E8F0;border-radius:16px;
-  padding:28px 26px;transition:box-shadow 0.22s,transform 0.22s;}
-.feat-card:hover{box-shadow:0 12px 36px rgba(91,95,248,0.1);transform:translateY(-3px);}
-.feat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;
+.feat-card{background:#FFFFFF;border:3px solid #000000;border-radius:8px;
+  box-shadow:4px 4px 0 #000000;
+  padding:28px 26px;transition:transform 150ms ease,box-shadow 150ms ease;}
+.feat-card:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 #000000;}
+.feat-icon{width:48px;height:48px;border:2.5px solid #000000;border-radius:4px;
+  box-shadow:2px 2px 0 #000000;display:flex;align-items:center;
   justify-content:center;font-size:1.3rem;margin-bottom:16px;}
-.feat-card h4{font-size:1rem;font-weight:700;color:#0F172A;margin-bottom:8px;
-  font-family:'Inter',sans-serif;}
-.feat-card p{font-size:0.83rem;color:#64748B;line-height:1.6;
-  font-family:'Inter',sans-serif;margin:0;}
+.feat-card h4{font-size:1.15rem;font-weight:800;color:#000000;margin-bottom:8px;
+  font-family:'Outfit',sans-serif;}
+.feat-card p{font-size:0.9rem;color:#333333;line-height:1.6;
+  font-family:'Outfit',sans-serif;margin:0;font-weight:600;}
 </style>
 <div class="feat-grid">
   <div class="feat-card">
-    <div class="feat-icon" style="background:#EEEFFF;">
+    <div class="feat-icon" style="background:#5865F2;">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="8" r="4" stroke="#5B5FF8" stroke-width="2"/>
-        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#5B5FF8" stroke-width="2" stroke-linecap="round"/>
-        <path d="M17 13l1.5 1.5L21 12" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="12" cy="8" r="4" stroke="white" stroke-width="2.5"/>
+        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M17 13l1.5 1.5L21 12" stroke="#00E676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
     <h4>AI Face Recognition</h4>
     <p>Upload a classroom photo — AI scans and marks every enrolled student present or absent in under 3 seconds. No manual input required.</p>
   </div>
   <div class="feat-card">
-    <div class="feat-icon" style="background:#F0FDF4;">
+    <div class="feat-icon" style="background:#00E676;">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-        <rect x="3" y="3" width="7" height="7" rx="1" fill="#22C55E" opacity="0.3"/>
-        <rect x="3" y="3" width="7" height="7" rx="1" stroke="#22C55E" stroke-width="1.5"/>
-        <rect x="14" y="3" width="7" height="7" rx="1" fill="#22C55E" opacity="0.3"/>
-        <rect x="14" y="3" width="7" height="7" rx="1" stroke="#22C55E" stroke-width="1.5"/>
-        <rect x="3" y="14" width="7" height="7" rx="1" fill="#22C55E" opacity="0.3"/>
-        <rect x="3" y="14" width="7" height="7" rx="1" stroke="#22C55E" stroke-width="1.5"/>
-        <rect x="16" y="16" width="3" height="3" rx="0.5" fill="#22C55E"/>
+        <rect x="3" y="3" width="7" height="7" rx="1" fill="white" opacity="0.3"/>
+        <rect x="3" y="3" width="7" height="7" rx="1" stroke="black" stroke-width="2"/>
+        <rect x="14" y="3" width="7" height="7" rx="1" fill="white" opacity="0.3"/>
+        <rect x="14" y="3" width="7" height="7" rx="1" stroke="black" stroke-width="2"/>
+        <rect x="3" y="14" width="7" height="7" rx="1" fill="white" opacity="0.3"/>
+        <rect x="3" y="14" width="7" height="7" rx="1" stroke="black" stroke-width="2"/>
+        <rect x="16" y="16" width="3" height="3" rx="0.5" fill="black"/>
       </svg>
     </div>
     <h4>QR Code Joining</h4>
     <p>Teachers generate a QR code per subject. Students scan once to enroll permanently. Works on any smartphone — no app download needed.</p>
   </div>
   <div class="feat-card">
-    <div class="feat-icon" style="background:#FFF7ED;">
+    <div class="feat-icon" style="background:#FFD600;">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-        <rect x="3" y="12" width="4" height="9" rx="1" fill="#F59E0B"/>
-        <rect x="10" y="7" width="4" height="14" rx="1" fill="#F59E0B" opacity="0.7"/>
-        <rect x="17" y="3" width="4" height="18" rx="1" fill="#F59E0B" opacity="0.4"/>
-        <path d="M3 8l5-3 5 4 5-5" stroke="#5B5FF8" stroke-width="1.5"
+        <rect x="3" y="12" width="4" height="9" rx="1" fill="black"/>
+        <rect x="10" y="7" width="4" height="14" rx="1" fill="black" opacity="0.7"/>
+        <rect x="17" y="3" width="4" height="18" rx="1" fill="black" opacity="0.4"/>
+        <path d="M3 8l5-3 5 4 5-5" stroke="black" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
@@ -279,13 +1054,13 @@ def home_screen():
     <p>Real-time charts, subject-wise breakdowns, session trends, and low-attendance alerts. Teachers see exactly who needs follow-up.</p>
   </div>
   <div class="feat-card">
-    <div class="feat-icon" style="background:#F5F3FF;">
+    <div class="feat-icon" style="background:#EB459E;">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
         <path d="M12 3L4 7v5c0 5.25 3.85 10.16 8 11.35C16.15 22.16 20 17.25 20 12V7L12 3z"
-              fill="#7C3AED" opacity="0.15"/>
+              fill="white" opacity="0.2"/>
         <path d="M12 3L4 7v5c0 5.25 3.85 10.16 8 11.35C16.15 22.16 20 17.25 20 12V7L12 3z"
-              stroke="#7C3AED" stroke-width="1.5" stroke-linejoin="round"/>
-        <path d="M9 12l2 2 4-4" stroke="#7C3AED" stroke-width="2"
+              stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M9 12l2 2 4-4" stroke="white" stroke-width="2.5"
               stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
@@ -303,26 +1078,26 @@ def home_screen():
                 unsafe_allow_html=True)
     st.markdown("""
 <style>
-.steps-wrap{background:#fff;border:1px solid #E2E8F0;border-radius:20px;
+.steps-wrap{background:#FFFFFF;border:3px solid #000000;border-radius:8px;
+  box-shadow:4px 4px 0 #000000;
   padding:2.5rem 2rem;margin:0 0 1rem;}
 .steps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;}
 .steps-grid::before{content:'';position:absolute;top:24px;left:12.5%;right:12.5%;
-  height:2px;background:linear-gradient(90deg,#C7C9FD,#DDD6FE);z-index:0;}
+  height:4px;background:#000000;z-index:0;}
 @media(max-width:700px){
-  .steps-grid{grid-template-columns:1fr 1fr;}
+  .steps-grid{grid-template-columns:1fr;gap:2rem;}
   .steps-grid::before{display:none;}
 }
 .step-item{text-align:center;padding:0 1rem;position:relative;z-index:1;}
-.step-num{width:48px;height:48px;border-radius:50%;
-  background:linear-gradient(135deg,#5B5FF8,#7C3AED);
-  color:#fff;font-size:0.95rem;font-weight:800;
+.step-num{width:48px;height:48px;border-radius:4px;
+  background:#5865F2;border:2.5px solid #000000;box-shadow:2px 2px 0 #000000;
+  color:#ffffff;font-size:1.15rem;font-weight:900;
   display:flex;align-items:center;justify-content:center;
-  margin:0 auto 14px;font-family:'Inter',sans-serif;
-  box-shadow:0 4px 16px rgba(91,95,248,0.35);}
-.step-item h4{font-size:0.9rem;font-weight:700;color:#0F172A;
-  margin-bottom:6px;font-family:'Inter',sans-serif;}
-.step-item p{font-size:0.78rem;color:#64748B;
-  font-family:'Inter',sans-serif;line-height:1.5;margin:0;}
+  margin:0 auto 14px;font-family:'Outfit',sans-serif;}
+.step-item h4{font-size:1.05rem;font-weight:800;color:#000000;
+  margin-bottom:6px;font-family:'Outfit',sans-serif;}
+.step-item p{font-size:0.85rem;color:#333333;
+  font-family:'Outfit',sans-serif;line-height:1.5;margin:0;font-weight:600;}
 </style>
 <div class="steps-wrap">
   <div class="steps-grid">
@@ -352,41 +1127,42 @@ def home_screen():
 
     # ── Analytics preview callout ─────────────────────────────────────────────
     st.markdown("""
-<div style="background:linear-gradient(135deg,#0F172A 0%,#1E293B 100%);
-     border-radius:18px;padding:3rem 2.5rem;text-align:center;margin:2rem 0 1rem;">
-  <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(91,95,248,0.25);
-       color:#C7C9FD;border:1px solid rgba(91,95,248,0.4);padding:4px 14px;
-       border-radius:100px;font-size:0.72rem;font-weight:700;letter-spacing:0.05em;
-       font-family:'Inter',sans-serif;margin-bottom:1rem;text-transform:uppercase;">
+<div style="background:#FFFFFF;border:4px solid #000000;border-radius:8px;
+     box-shadow:6px 6px 0 #000000;padding:3rem 2.5rem;text-align:center;margin:2rem 0 1rem;">
+  <div style="display:inline-flex;align-items:center;gap:8px;background:#FFD600;
+       color:#000000;border:2.5px solid #000000;padding:6px 14px;
+       border-radius:4px;font-size:0.8rem;font-weight:800;letter-spacing:0.05em;
+       font-family:'Outfit',sans-serif;margin-bottom:1rem;text-transform:uppercase;
+       box-shadow:2px 2px 0 #000000;">
     Analytics &amp; Reporting
   </div>
-  <div style="font-size:clamp(1.2rem,2.5vw,1.65rem);font-weight:900;color:#fff;
-       letter-spacing:-0.035em;margin-bottom:0.75rem;font-family:'Inter',sans-serif;">
+  <div style="font-size:clamp(1.4rem,2.5vw,1.8rem);font-weight:900;color:#000000;
+       letter-spacing:-0.03em;margin-bottom:0.75rem;font-family:'Outfit',sans-serif;text-transform:uppercase;">
     Know Who Needs Attention — Before It's Too Late
   </div>
-  <div style="font-size:0.88rem;color:rgba(255,255,255,0.55);max-width:520px;
-       margin:0 auto 1.5rem;font-family:'Inter',sans-serif;line-height:1.65;">
+  <div style="font-size:0.95rem;color:#333333;max-width:520px;
+       margin:0 auto 1.5rem;font-family:'Outfit',sans-serif;line-height:1.65;font-weight:600;">
     Per-subject attendance charts, session trends, and automatic low-attendance
     alerts give teachers actionable data every single day.
   </div>
   <div style="display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;">
-    <div style="text-align:center;">
-      <div style="font-size:1.75rem;font-weight:900;color:#5B5FF8;
-           font-family:'Inter',sans-serif;letter-spacing:-0.04em;">98%</div>
-      <div style="font-size:0.72rem;color:rgba(255,255,255,0.5);
-           font-family:'Inter',sans-serif;">Recognition Rate</div>
+    <div style="text-align:center;background:#FFFFFF;border:2.5px solid #000;border-radius:4px;padding:8px 16px;box-shadow:3px 3px 0 #000;">
+      <div style="font-size:1.75rem;font-weight:900;color:#5865F2;
+           font-family:'Outfit',sans-serif;letter-spacing:-0.04em;">98%</div>
+      <div style="font-size:0.8rem;color:#000000;
+           font-family:'Outfit',sans-serif;font-weight:700;">Recognition Rate</div>
     </div>
-    <div style="text-align:center;">
-      <div style="font-size:1.75rem;font-weight:900;color:#22C55E;
-           font-family:'Inter',sans-serif;letter-spacing:-0.04em;">50+</div>
-      <div style="font-size:0.72rem;color:rgba(255,255,255,0.5);
-           font-family:'Inter',sans-serif;">Institutions</div>
+    <div style="text-align:center;background:#FFFFFF;border:2.5px solid #000;border-radius:4px;padding:8px 16px;box-shadow:3px 3px 0 #000;">
+      <div style="font-size:1.75rem;font-weight:900;color:#00E676;
+           font-family:'Outfit',sans-serif;letter-spacing:-0.04em;">50+</div>
+      <div style="font-size:0.8rem;color:#000000;
+           font-family:'Outfit',sans-serif;font-weight:700;">Institutions</div>
     </div>
-    <div style="text-align:center;">
-      <div style="font-size:1.75rem;font-weight:900;color:#F59E0B;
-           font-family:'Inter',sans-serif;letter-spacing:-0.04em;">10K+</div>
-      <div style="font-size:0.72rem;color:rgba(255,255,255,0.5);
-           font-family:'Inter',sans-serif;">Students</div>
+    <div style="text-align:center;background:#FFFFFF;border:2.5px solid #000;border-radius:4px;padding:8px 16px;box-shadow:3px 3px 0 #000;">
+      <div style="font-size:1.75rem;font-weight:900;color:#EB459E;
+           font-family:'Outfit',sans-serif;letter-spacing:-0.04em;">10K+</div>
+      <div style="font-size:0.8rem;color:#000000;
+           font-family:'Outfit',sans-serif;font-weight:700;">Students</div>
     </div>
   </div>
 </div>
@@ -395,7 +1171,7 @@ def home_screen():
     # ── CTA section ───────────────────────────────────────────────────────────
     st.markdown(_section("Get Started", "Try SmartAttend Today"),
                 unsafe_allow_html=True)
-    cta_l, cta_m, cta_r, _ = st.columns([1.5, 1, 1, ][::1][:3] if False else [1.5, 1, 1, 1.5])
+    cta_l, cta_m, cta_r, _ = st.columns([1.5, 1, 1, 1.5])
     with cta_m:
         if st.button("Student Portal →", type="primary", use_container_width=True,
                      key="cta_student"):

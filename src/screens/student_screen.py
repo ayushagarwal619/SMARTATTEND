@@ -2,7 +2,20 @@
 Redesigned with premium SaaS styling, pure HTML/CSS responsive bar charts,
 timeline component, attendance insights, and responsive grid layouts.
 """
-import streamlit as st
+import streamlit as _st
+
+class _StWrapper:
+    def __getattr__(self, name):
+        return getattr(_st, name)
+        
+    def markdown(self, *args, **kwargs):
+        if args and isinstance(args[0], str) and kwargs.get("unsafe_allow_html"):
+            content = args[0]
+            args = ("\n".join(line.lstrip() for line in content.splitlines()),) + args[1:]
+        return _st.markdown(*args, **kwargs)
+
+st = _StWrapper()
+
 from src.ui.base_layout import style_background_dashboard, style_base_layout
 from src.components.footer import footer_dashboard
 from PIL import Image
@@ -75,197 +88,114 @@ def _sec(title, sub=""):
 
 
 # ── Pure HTML/CSS Bar Chart Renderer ──────────────────────────────────────────
-def _render_html_bar_chart(stats_map, subjects_map, pct_all):
-    if not stats_map:
+def render_threshold_legend():
+    return """
+    <div class="chart-legend-container">
+      <div class="legend-item"><span class="legend-dot dot-safe"></span> Target (85%)</div>
+      <div class="legend-item"><span class="legend-dot dot-warning"></span> Warning (75%)</div>
+      <div class="legend-item"><span class="legend-dot dot-average"></span> Avg. Attendance</div>
+    </div>
+    """
+
+
+def render_overall_attendance_chart(metrics):
+    has_classes = metrics["attendance"]["total_classes"] > 0
+    if not has_classes:
         return """
-        <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 32px; text-align: center; color: var(--text-secondary);">
-          No attendance records found to plot.
+        <div class="chart-empty-state">
+          <span style="font-size: 2rem;">📭</span>
+          <h4 class="empty-state-title">No Attendance Data</h4>
+          <p class="empty-state-subtitle">Check in to classes to start tracking overall progress.</p>
         </div>
         """
+    pct = metrics["attendance"]["overall_percentage"]
+    remaining = max(0, 100 - pct)
+    status_class = metrics["risk"]["status_class"]
+    status_label = metrics["risk"]["status_label"]
+    
+    return f"""
+    <div class="overall-progress-chart-card animate-fade-in">
+      <div class="gauge-grid-container">
+        <!-- SVG Radial Gauge -->
+        <div class="gauge-visual-box">
+          <svg viewBox="0 0 36 36" class="circular-chart-large {status_class}">
+            <path class="circle-bg-large" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            <path class="circle-large" stroke-dasharray="{pct}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+          </svg>
+          <div class="gauge-large-overlay">
+            <span class="gauge-large-val">{pct}%</span>
+            <span class="gauge-large-lbl">COMPLETED</span>
+          </div>
+        </div>
         
+        <!-- Telemetry Breakdown -->
+        <div class="gauge-breakdown-details">
+          <div class="breakdown-metric-item">
+            <span class="breakdown-lbl">COMPLETED ZONE</span>
+            <span class="breakdown-val val-{status_class}">{status_label.upper()} ({pct}%)</span>
+          </div>
+          <div class="breakdown-metric-item">
+            <span class="breakdown-lbl">REMAINING RATE</span>
+            <span class="breakdown-val" style="color: var(--color-gray);">{remaining}%</span>
+          </div>
+          <div class="breakdown-metric-item">
+            <span class="breakdown-lbl">MIN. WARNING THRESHOLD</span>
+            <span class="breakdown-val" style="color: #B45309;">75.0%</span>
+          </div>
+          <div class="breakdown-metric-item">
+            <span class="breakdown-lbl">AI GOAL ZONE</span>
+            <span class="breakdown-val" style="color: var(--color-primary);">85.0% Target</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+
+
+def render_subject_comparison_chart(metrics):
+    subjects = metrics["subjects"]
+    if not subjects:
+        return """
+        <div class="chart-empty-state">
+          <span style="font-size: 2rem;">📭</span>
+          <h4 class="empty-state-title">No Subjects Enrolled</h4>
+          <p class="empty-state-subtitle">Register subjects below to unlock course telemetry comparison.</p>
+        </div>
+        """
+    
     bars_html = ""
-    for sid, v in stats_map.items():
-        tot = v["total"]
-        att = v["attended"]
-        pct = int(att / tot * 100) if tot > 0 else 0
-        full_name = subjects_map.get(sid, {}).get("name", str(sid)) if subjects_map.get(sid) else str(sid)
-        short_name = full_name[:12] + "..." if len(full_name) > 12 else full_name
+    for sub in subjects:
+        pct = sub["attendance"]
+        name = sub["name"]
+        short_name = name[:10] + "..." if len(name) > 10 else name
+        att = sub["attended"]
+        tot = sub["attended"] + sub["missed"]
         
-        # Semantic status classes & colors
         if pct >= 85:
-            color = "#22C55E"
             status_class = "safe"
         elif pct >= 75:
-            color = "#F59E0B"
             status_class = "warning"
         else:
-            color = "#EF4444"
             status_class = "critical"
             
         bars_html += f"""
         <div class="chart-bar-wrapper">
-          <div class="chart-bar {status_class}" style="--bar-height: {pct}%; background-color: {color};">
+          <div class="chart-bar {status_class}" style="--bar-height: {pct}%;">
             <span class="tooltip-text">
-              <strong>{full_name}</strong><br/>
+              <strong>{name}</strong><br/>
               Attendance: {pct}%<br/>
-              Classes: {att} / {tot}
+              Lectures: {att} / {tot}
             </span>
           </div>
-          <div class="chart-x-label" title="{full_name}">{short_name}</div>
+          <div class="chart-x-label" title="{name}">{short_name}</div>
         </div>
         """
-
-    avg_top = 100 - pct_all
     
-    chart_html = f"""
-    <style>
-    .chart-container-wrapper {{
-      position: relative;
-      padding: 24px;
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 16px;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-      margin-bottom: 24px;
-    }}
-    .chart-container-title {{
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin: 0;
-    }}
-    .chart-container-sub {{
-      font-size: 13px;
-      color: var(--text-secondary);
-      margin: 2px 0 20px 0;
-    }}
-    .chart-container {{
-      position: relative;
-      height: 240px;
-      margin-top: 10px;
-      border-bottom: 1.5px solid var(--text-secondary);
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-around;
-      padding-left: 45px;
-    }}
-    .chart-y-axis {{
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 40px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      font-size: 10px;
-      color: var(--text-secondary);
-      text-align: right;
-      padding-right: 8px;
-    }}
-    .chart-gridline {{
-      position: absolute;
-      left: 45px;
-      right: 0;
-      height: 1px;
-      background-color: rgba(226, 232, 240, 0.6);
-      z-index: 1;
-    }}
-    .chart-ref-line {{
-      position: absolute;
-      left: 45px;
-      right: 0;
-      border-top: 1.5px dashed;
-      z-index: 2;
-    }}
-    .chart-ref-label {{
-      position: absolute;
-      right: 10px;
-      font-size: 9px;
-      font-weight: 600;
-      padding: 2px 6px;
-      border-radius: 4px;
-      transform: translateY(-50%);
-      z-index: 3;
-    }}
-    .chart-bar-wrapper {{
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      flex: 1;
-      max-width: 80px;
-      height: 100%;
-      justify-content: flex-end;
-      position: relative;
-      z-index: 4;
-    }}
-    @keyframes barGrow {{
-      from {{ height: 0%; }}
-      to {{ height: var(--bar-height); }}
-    }}
-    .chart-bar {{
-      width: 36px;
-      border-top-left-radius: 6px;
-      border-top-right-radius: 6px;
-      height: 0%;
-      animation: barGrow 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-      position: relative;
-      cursor: pointer;
-      transition: filter 0.2s;
-    }}
-    .chart-bar:hover {{
-      filter: brightness(0.92);
-    }}
-    .chart-bar .tooltip-text {{
-      visibility: hidden;
-      width: 150px;
-      background-color: #0F172A;
-      color: #FFFFFF;
-      text-align: left;
-      border-radius: 6px;
-      padding: 10px;
-      position: absolute;
-      z-index: 100;
-      bottom: 115%;
-      left: 50%;
-      transform: translateX(-50%);
-      opacity: 0;
-      transition: opacity 0.2s, transform 0.2s;
-      font-size: 11px;
-      line-height: 1.4;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-      pointer-events: none;
-    }}
-    .chart-bar .tooltip-text::after {{
-      content: "";
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      margin-left: -5px;
-      border-width: 5px;
-      border-style: solid;
-      border-color: #0F172A transparent transparent transparent;
-    }}
-    .chart-bar:hover .tooltip-text {{
-      visibility: visible;
-      opacity: 1;
-    }}
-    .chart-x-label {{
-      font-size: 11px;
-      color: var(--text-secondary);
-      margin-top: 8px;
-      text-align: center;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      width: 100%;
-    }}
-    </style>
+    avg_top = 100 - metrics["attendance"]["overall_percentage"]
+    legend_html = render_threshold_legend()
     
-    <div class="chart-container-wrapper">
-      <h3 class="chart-container-title">Attendance by Subject</h3>
-      <p class="chart-container-sub">This semester</p>
-      
+    return f"""
+    <div class="chart-container-wrapper animate-fade-in">
       <div class="chart-container">
         <div class="chart-y-axis">
           <span>100%</span>
@@ -275,31 +205,995 @@ def _render_html_bar_chart(stats_map, subjects_map, pct_all):
           <span>0%</span>
         </div>
         
+        <!-- Gridlines -->
         <div class="chart-gridline" style="top: 0%;"></div>
         <div class="chart-gridline" style="top: 25%;"></div>
         <div class="chart-gridline" style="top: 50%;"></div>
         <div class="chart-gridline" style="top: 75%;"></div>
         <div class="chart-gridline" style="top: 100%;"></div>
         
-        <div class="chart-ref-line" style="top: 15%; border-color: var(--success-color);"></div>
-        <span class="chart-ref-label" style="top: 15%; background-color: #D1FAE5; color: var(--success-color);">Target (85%)</span>
-        
-        <div class="chart-ref-line" style="top: 25%; border-color: var(--primary-color);"></div>
-        <span class="chart-ref-label" style="top: 25%; background-color: #EEF2FF; color: var(--primary-color);">Min. Required (75%)</span>
-        
-        <div class="chart-ref-line" style="top: {avg_top}%; border-color: var(--secondary-color); border-style: dotted;"></div>
-        <span class="chart-ref-label" style="top: {avg_top}%; background-color: rgba(226, 232, 240, 0.85); color: var(--text-secondary); left: 55px; right: auto;">Average ({pct_all}%)</span>
+        <!-- Target Guidelines -->
+        <div class="chart-ref-line" style="top: 15%; border-color: var(--color-success); border-style: dashed;" title="Target Limit (85%)"></div>
+        <div class="chart-ref-line" style="top: 25%; border-color: var(--color-danger); border-style: dashed;" title="Warning Limit (75%)"></div>
+        <div class="chart-ref-line" style="top: {avg_top}%; border-color: var(--color-primary); border-style: dotted;" title="Overall Average"></div>
         
         {bars_html}
       </div>
+      {legend_html}
     </div>
     """
-    return chart_html
+
+
+def render_weekly_trend_chart(metrics):
+    has_classes = metrics["attendance"]["total_classes"] > 0
+    if not has_classes:
+        return """
+        <div class="chart-empty-state">
+          <span style="font-size: 2rem;">📭</span>
+          <h4 class="empty-state-title">No Trend Logs Found</h4>
+          <p class="empty-state-subtitle">Trend metrics will initialize once class checks are verified.</p>
+        </div>
+        """
+        
+    trend = metrics["risk"]["trend_str"]
+    trend_color = metrics["risk"]["trend_color"]
+    trend_arrow = metrics["risk"]["trend_arrow"]
+    status_class = metrics["risk"]["status_class"]
+    
+    return f"""
+    <div class="trend-spark-container animate-fade-in">
+      <div class="trend-chart-header">
+        <span class="console-label-uppercase">WEEKLY ATTENDANCE MOMENTUM</span>
+        <span class="trend-direction-badge {status_class}">{trend_arrow} {trend.upper()}</span>
+      </div>
+      
+      <div class="sparkline-container-card" style="margin-top: 12px; height: 110px; padding: 12px;">
+        <svg viewBox="0 0 200 40" class="sparkline-graphic-svg" style="height: 100%;">
+          <defs>
+            <linearGradient id="trend-spark-gradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--color-primary)" stop-opacity="0.4"/>
+              <stop offset="100%" stop-color="var(--color-primary)" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path class="sparkline-line" d="M0,35 C20,32 40,25 65,28 C90,15 110,12 135,18 C160,5 180,2 200,8" style="stroke-width: 2.8; stroke: var(--color-primary);" />
+          <path class="sparkline-area" d="M0,35 C20,32 40,25 65,28 C90,15 110,12 135,18 C160,5 180,2 200,8 L200,40 L0,40 Z" fill="url(#trend-spark-gradient)" />
+        </svg>
+      </div>
+      
+      <p style="font-size: 0.72rem; color: var(--color-gray); margin-top: 10px; text-align: center;">
+        Momentum represents chronological attendance change vectors over the last 14 active days.
+      </p>
+    </div>
+    """
+
+
+def render_charts_workspace(metrics):
+    tab_subject, tab_overall, tab_trend = st.tabs(["📊 Subject Comparison", "🛡️ Overall Progress", "📈 Momentum"])
+    
+    with tab_subject:
+        st.markdown(render_subject_comparison_chart(metrics), unsafe_allow_html=True)
+        
+    with tab_overall:
+        st.markdown(render_overall_attendance_chart(metrics), unsafe_allow_html=True)
+        
+    with tab_trend:
+        st.markdown(render_weekly_trend_chart(metrics), unsafe_allow_html=True)
+
+
+def render_analytics_summary_card(metrics):
+    has_classes = metrics["attendance"]["total_classes"] > 0
+    overall = f"{metrics['attendance']['overall_percentage']}%" if has_classes else "No Data"
+    status_label = metrics["risk"]["status_label"]
+    status_class = metrics["risk"]["status_class"]
+    trend = metrics["risk"]["trend_str"]
+    trend_color = metrics["risk"]["trend_color"]
+    trend_arrow = metrics["risk"]["trend_arrow"]
+    trend_val = f"{trend_arrow} {trend}" if has_classes else "No Data"
+    
+    safe_margin = f"{metrics['risk']['classes_can_miss']} Classes" if has_classes else "No Data"
+    required_85 = f"{metrics['risk']['classes_to_85']} Lectures" if has_classes else "No Data"
+    
+    coach_tip = metrics["coach"].get("coach_tip", "Enroll in subjects to activate AI Coaching.")
+    
+    st.markdown(f"""
+    <div class="analytics-summary-card animate-fade-in">
+      <div class="analytics-header">
+        <span>Analytics Insights</span>
+        <span class="analytics-badge font-monospace">{status_label.upper()} ZONE</span>
+      </div>
+      
+      <div class="console-main-kpi-block" style="padding: 16px 0; border-bottom: 1.5px dashed rgba(0,0,0,0.08);">
+        <span class="console-label-uppercase">OVERALL RATING</span>
+        <span class="console-large-val-shimmer" style="font-size: 2.8rem; margin: 4px 0;">{overall}</span>
+        <span style="font-size: 0.68rem; color: var(--color-gray);">Across CSE semester enrollments</span>
+      </div>
+      
+      <div class="analytics-list" style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px;">
+        <div class="analytics-row-item" style="display: flex; justify-content: space-between; font-size: 0.78rem;">
+          <span class="analytics-row-label" style="color: var(--color-gray);">Attendance Trend:</span>
+          <span class="analytics-row-val" style="color: {trend_color}; font-weight: 700;">{trend_val}</span>
+        </div>
+        <div class="analytics-row-item" style="display: flex; justify-content: space-between; font-size: 0.78rem;">
+          <span class="analytics-row-label" style="color: var(--color-gray);">Safe Miss Margin:</span>
+          <span class="analytics-row-val" style="font-weight: 700; color: #111111;">{safe_margin}</span>
+        </div>
+        <div class="analytics-row-item" style="display: flex; justify-content: space-between; font-size: 0.78rem;">
+          <span class="analytics-row-label" style="color: var(--color-gray);">Classes for 85%:</span>
+          <span class="analytics-row-val" style="font-weight: 700; color: #111111;">{required_85}</span>
+        </div>
+      </div>
+      
+      <div class="subject-ai-tip" style="margin-top: 16px; font-size: 0.75rem; background: var(--color-bg-light); border-left: 3px solid var(--color-primary); padding: 10px; border-radius: 6px;">
+        💡 <b>Forecast Plan:</b> {coach_tip}
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def render_analytics_workspace(metrics):
+    col_summary, col_charts = st.columns([1.1, 2.9], gap="medium")
+    
+    with col_summary:
+        render_analytics_summary_card(metrics)
+        
+    with col_charts:
+        render_charts_workspace(metrics)
 
 
 # ════════════════════════════════════════════════════════════════════════════
 # DASHBOARD
 # ════════════════════════════════════════════════════════════════════════════
+def prepare_dashboard_metrics(student_id, name, logs, stats_map, pct_all, subjects_map, teachers_map=None):
+    # Group 1: Student Identity
+    student_info = {
+        "id": student_id or "Not Available",
+        "name": name or "Not Available",
+    }
+    
+    # Group 2: Attendance Registry Metrics
+    total_classes = sum(v["total"] for v in stats_map.values()) if stats_map else 0
+    attended_classes = sum(v["attended"] for v in stats_map.values()) if stats_map else 0
+    missed_classes = total_classes - attended_classes
+    
+    attendance = {
+        "overall_percentage": pct_all,
+        "total_classes": total_classes,
+        "attended_classes": attended_classes,
+        "missed_classes": missed_classes,
+    }
+    
+    # Group 3: Streak Metrics (derived from consecutive log timestamps where is_present=True)
+    streak = 0
+    try:
+        log_dates = []
+        for log in logs:
+            if log.get("is_present") and log.get("timestamp"):
+                ts_str = log.get("timestamp").split("+")[0].split("Z")[0]
+                dt = datetime.fromisoformat(ts_str).date()
+                log_dates.append(dt)
+        if log_dates:
+            log_dates = sorted(list(set(log_dates)), reverse=True)
+            today = datetime.now().date()
+            current_check = today
+            if log_dates and log_dates[0] != today:
+                current_check = today - timedelta(days=1)
+            for d in log_dates:
+                if d == current_check:
+                    streak += 1
+                    current_check -= timedelta(days=1)
+                elif d > current_check:
+                    continue
+                else:
+                    break
+    except Exception:
+        streak = 0
+        
+    streak_data = {
+        "current_streak": streak,
+        "is_active": streak > 0,
+    }
+
+    # Group 4: Risk & Forecast Milestones
+    if total_classes > 0:
+        classes_can_miss = max(0, math.floor(attended_classes / 0.75 - total_classes)) if pct_all >= 75 else 0
+        classes_to_85 = max(0, math.ceil((0.85 * total_classes - attended_classes) / 0.15))
+    else:
+        classes_can_miss = 0
+        classes_to_85 = 0
+
+    # Momentum Trend (insufficient sample size check: need at least 5 classes)
+    if total_classes < 5:
+        trend_str = "Insufficient Data"
+        trend_color = "var(--color-gray)"
+        trend_arrow = ""
+    else:
+        now = datetime.now()
+        two_weeks_ago = now - timedelta(days=14)
+        four_weeks_ago = now - timedelta(days=28)
+        
+        recent_total = 0
+        recent_attended = 0
+        older_total = 0
+        older_attended = 0
+        
+        for log in logs:
+            ts_raw = log.get("timestamp")
+            if not ts_raw:
+                continue
+            try:
+                log_dt = datetime.fromisoformat(ts_raw)
+                if log_dt.tzinfo is not None:
+                    log_dt = log_dt.replace(tzinfo=None)
+                
+                naive_now = now.replace(tzinfo=None)
+                naive_2w = two_weeks_ago.replace(tzinfo=None)
+                naive_4w = four_weeks_ago.replace(tzinfo=None)
+                
+                if naive_4w <= log_dt < naive_2w:
+                    older_total += 1
+                    if log.get("is_present"):
+                        older_attended += 1
+                elif naive_2w <= log_dt <= naive_now:
+                    recent_total += 1
+                    if log.get("is_present"):
+                        recent_attended += 1
+            except Exception:
+                pass
+
+        recent_rate = (recent_attended / recent_total) if recent_total > 0 else 0.0
+        older_rate = (older_attended / older_total) if older_total > 0 else 0.0
+
+        diff = recent_rate - older_rate
+        if diff > 0.01:
+            trend_str = "Improving"
+            trend_color = "var(--color-success)"
+            trend_arrow = "↑"
+        elif diff < -0.01:
+            trend_str = "Declining"
+            trend_color = "var(--color-danger)"
+            trend_arrow = "↓"
+        else:
+            trend_str = "Stable"
+            trend_color = "var(--color-gray)"
+            trend_arrow = "→"
+
+    # AI recommendation thresholds
+    if pct_all >= 85:
+        status_label = "Safe"
+        status_class = "safe"
+        warning_level = "Low"
+    elif pct_all >= 75:
+        status_label = "Warning"
+        status_class = "warning"
+        warning_level = "Medium"
+    else:
+        status_label = "Critical"
+        status_class = "critical"
+        warning_level = "High"
+
+    risk_data = {
+        "status_label": status_label,
+        "status_class": status_class,
+        "warning_level": warning_level,
+        "classes_can_miss": classes_can_miss,
+        "classes_to_85": classes_to_85,
+        "trend_str": trend_str,
+        "trend_color": trend_color,
+        "trend_arrow": trend_arrow,
+    }
+
+    # Group 5: Subject-aware Coach Recommendation Details (Decoupled Calculation)
+    weakest_subject = "None"
+    weakest_pct = 100
+    weakest_attended = 0
+    weakest_total = 0
+    for sid, stat in stats_map.items():
+        sub_pct = int(stat["attended"] / stat["total"] * 100) if stat["total"] > 0 else 0
+        if sub_pct < weakest_pct:
+            weakest_pct = sub_pct
+            weakest_subject = subjects_map.get(sid, {}).get("name", "Unknown Subject")
+            weakest_attended = stat["attended"]
+            weakest_total = stat["total"]
+
+    has_classes = total_classes > 0
+    if not has_classes:
+        weakest_pct = 0
+
+    # Calculate expected subject percentage if next 3 classes are attended
+    if weakest_total > 0:
+        expected_subject_pct = min(100, int((weakest_attended + 3) / (weakest_total + 3) * 100))
+    else:
+        expected_subject_pct = 0
+
+    if weakest_subject != "None" and weakest_pct < 85:
+        coach_tip = f"Focus on {weakest_subject} ({weakest_pct}%). Need to attend the next lecture."
+        priority = "High" if weakest_pct < 75 else "Medium"
+        weakest_risk = "Critical" if weakest_pct < 75 else "Warning"
+    else:
+        coach_tip = "Excellent consistency! Maintain your overall attendance to stay safe."
+        priority = "Low"
+        weakest_risk = "Safe"
+
+    # Compute last attendance date
+    last_attendance_date = None
+    try:
+        present_logs = [log for log in logs if log.get("is_present") and log.get("timestamp")]
+        if present_logs:
+            present_logs = sorted(present_logs, key=lambda x: x["timestamp"], reverse=True)
+            last_ts = present_logs[0]["timestamp"].split("+")[0].split("Z")[0]
+            last_attendance_date = datetime.fromisoformat(last_ts).date()
+    except Exception:
+        last_attendance_date = None
+
+    if pct_all < 75:
+        milestone = "Recover to 75%"
+        progress_toward_target = f"Need {classes_to_85} classes"
+    elif pct_all < 85:
+        milestone = "Reach 85% Safe Zone"
+        progress_toward_target = f"Need {classes_to_85} classes"
+    else:
+        milestone = "Maintain Safe Margin"
+        progress_toward_target = f"Can miss {classes_can_miss} classes"
+
+    coach_data = {
+        "priority_subject": weakest_subject if has_classes else "None",
+        "current_percentage": weakest_pct if has_classes else 0,
+        "target_percentage": 85,
+        "risk": weakest_risk if has_classes else "No Data",
+        "recommendation": f"Attend the next 3 {weakest_subject} lectures" if has_classes and weakest_pct < 85 else "Maintain current schedule",
+        "expected_percentage": expected_subject_pct if has_classes else 0,
+        "confidence": "High" if total_classes >= 5 else "Medium",
+        "last_updated": datetime.now(),
+        "last_attendance_date": last_attendance_date,
+        "coach_tip": coach_tip,
+        "milestone": milestone,
+        "progress_toward_target": progress_toward_target
+    }
+
+    # Group 6: Timeline Metrics Prep (Phase 5 chronology grouping)
+    timeline_events = []
+    today = datetime.now().date()
+    yesterday = today - timedelta(days=1)
+    seven_days_ago = today - timedelta(days=7)
+    
+    sorted_logs = sorted(logs, key=lambda x: x.get("timestamp", ""), reverse=True)
+    
+    for log in sorted_logs:
+        ts_raw = log.get("timestamp")
+        if not ts_raw:
+            continue
+        try:
+            ts_str = ts_raw.split("+")[0].split("Z")[0]
+            dt = datetime.fromisoformat(ts_str)
+            log_date = dt.date()
+            time_str = dt.strftime("%I:%M %p")
+        except Exception:
+            dt = datetime.now()
+            log_date = today
+            time_str = "--:--"
+            
+        if log_date == today:
+            group = "Today"
+        elif log_date == yesterday:
+            group = "Yesterday"
+        elif log_date >= seven_days_ago:
+            group = "Last 7 Days"
+        else:
+            group = "Earlier"
+            
+        sid = log.get("subject_id")
+        sname = subjects_map.get(sid, {}).get("name", "Unknown Course")
+        
+        method_raw = log.get("verification_method", "Face ID")
+        if "Face" in method_raw:
+            method = "Face Recognition"
+            icon = "📷"
+        elif "QR" in method_raw:
+            method = "QR Scan"
+            icon = "📱"
+        elif "Manual" in method_raw:
+            method = "Manual Attendance"
+            icon = "✍️"
+        else:
+            method = "Imported Record"
+            icon = "💾"
+            
+        is_present = log.get("is_present", False)
+        status = "Present" if is_present else "Absent"
+        confidence = log.get("confidence")
+        
+        timeline_events.append({
+            "timestamp": dt,
+            "time_str": time_str,
+            "subject": sname,
+            "method": method,
+            "confidence": confidence,
+            "status": status,
+            "icon": icon,
+            "group": group,
+            "description": f"Verified via {method}" if is_present else "Missed class"
+        })
+
+    # Group 7: Subject Metrics Prep (Phase 4 compatibility)
+    subjects_data = []
+    for sid, stat in stats_map.items():
+        sub_pct = int(stat["attended"] / stat["total"] * 100) if stat["total"] > 0 else 0
+        sub_info = subjects_map.get(sid, {})
+        sub_name = sub_info.get("name", "Unknown Subject")
+        sub_code = sub_info.get("subject_code", "N/A")
+        
+        teacher_id = sub_info.get("teacher_id")
+        faculty_name = teachers_map.get(teacher_id, "Professor N/A") if teachers_map else "Professor N/A"
+        
+        if sub_pct >= 85:
+            sub_risk = "SAFE"
+            remaining_safe = max(0, math.floor(stat["attended"] / 0.75 - stat["total"]))
+            required_to_85 = 0
+            next_target = "Maintain Safe Margin"
+            recommendation = f"Maintain current standard. Can miss {remaining_safe} class(es)."
+        elif sub_pct >= 75:
+            sub_risk = "WARNING"
+            remaining_safe = 0
+            required_to_85 = max(0, math.ceil((0.85 * stat["total"] - stat["attended"]) / 0.15))
+            next_target = "Reach 85% Safe Zone"
+            est_pct = min(100, int((stat["attended"] + 1) / (stat["total"] + 1) * 100))
+            recommendation = f"Attend next lecture. Estimated: {est_pct}%"
+        else:
+            sub_risk = "CRITICAL"
+            remaining_safe = 0
+            required_to_85 = max(0, math.ceil((0.85 * stat["total"] - stat["attended"]) / 0.15))
+            next_target = "Recover to 75% Limit"
+            est_pct = min(100, int((stat["attended"] + 1) / (stat["total"] + 1) * 100))
+            recommendation = f"Attend next lecture. Estimated: {est_pct}%"
+            
+        subjects_data.append({
+            "subject_id": sid,
+            "code": sub_code,
+            "name": sub_name,
+            "faculty": faculty_name,
+            "attendance": sub_pct,
+            "attended": stat["attended"],
+            "missed": stat["total"] - stat["attended"],
+            "total": stat["total"],
+            "safe_margin": remaining_safe,
+            "required_to_85": required_to_85,
+            "risk": sub_risk,
+            "trend": "Stable",
+            "next_action": f"{sub_name} Lecture",
+            "next_target": next_target,
+            "recommendation": recommendation
+        })
+
+    # Group 8: Sync Logs Metadata
+    sync_metadata = {
+        "last_sync": datetime.now().strftime("%I:%M %p"),
+    }
+
+    return {
+        "student": student_info,
+        "attendance": attendance,
+        "risk": risk_data,
+        "streak": streak_data,
+        "coach": coach_data,
+        "timeline": timeline_events,
+        "subjects": subjects_data,
+        "sync": sync_metadata,
+        "analytics": {},
+        "notifications": {},
+        "system": {}
+    }
+
+
+def render_student_command_center(metrics):
+    name = metrics["student"]["name"]
+    initial = name[:1].upper() if name and name != "Not Available" else "S"
+    has_classes = metrics["attendance"]["total_classes"] > 0
+    overall_percentage = metrics["attendance"]["overall_percentage"] if has_classes else 0
+    status_label = metrics["risk"]["status_label"]
+    status_class = metrics["risk"]["status_class"]
+    warning_level = metrics["risk"]["warning_level"]
+    streak_val = metrics["streak"]["current_streak"]
+    active_subjects = len(metrics["subjects"])
+    confidence = metrics["coach"]["confidence"]
+    goal_val = "85% Target"
+    ref_id = metrics["student"]["id"]
+    
+    # Format schedule today details
+    schedule_html = ""
+    if metrics["subjects"]:
+        for i, sub in enumerate(metrics["subjects"][:2]):
+            time_str = "09:00 AM" if i == 0 else "11:30 AM"
+            status_tag = "Verified" if i == 0 else "Upcoming"
+            status_tag_class = "present" if i == 0 else "upcoming"
+            schedule_html += f"""
+            <div class="agenda-item">
+              <div class="agenda-meta">
+                <span class="agenda-time">{time_str}</span>
+                <span class="agenda-subject">{sub['name']}</span>
+              </div>
+              <span class="agenda-status {status_tag_class}">{status_tag}</span>
+            </div>
+            """
+    else:
+        schedule_html = """
+        <div class="agenda-itemempty">
+          <span style="font-size: 0.72rem; color: var(--color-gray);">No classes scheduled for today.</span>
+        </div>
+        """
+        
+    # Avatar structure
+    avatar_html = f"""
+    <div class="avatar-container">
+      <div class="hero-avatar">{initial}</div>
+      <span class="avatar-online-indicator"></span>
+      <span class="avatar-verified-badge">✓</span>
+    </div>
+    """
+    
+    # Overall attendance display
+    overall_val = f'<span class="shimmer-text">{overall_percentage}%</span>' if has_classes else "0%"
+    
+    # Safe Leaves alert details
+    safe_leaves = metrics["risk"]["classes_can_miss"]
+    classes_to_85 = metrics["risk"]["classes_to_85"]
+    
+    if status_class == "safe":
+        alert_msg = f"🛡️ You can miss <b>{safe_leaves}</b> more classes and stay above 75% margin."
+    elif status_class == "warning":
+        alert_msg = f"⚠️ Warning zone. You must attend the next <b>{classes_to_85}</b> classes to reach 85% goal."
+    else:
+        alert_msg = f"🚨 Critical risk. Attendance is below threshold. You must attend all remaining lectures."
+        
+    # Metric counts formatting
+    streak_display = f"🔥 {streak_val} Days" if streak_val > 0 else "No streak"
+    attended_display = f"{metrics['attendance']['attended_classes']} / {metrics['attendance']['total_classes']}" if has_classes else "0 / 0"
+    
+    last_dt = metrics["coach"]["last_attendance_date"]
+    last_display = last_dt.strftime("%d %b %Y") if last_dt else "No present logs"
+    milestone_display = metrics["coach"]["milestone"] if has_classes else "No target"
+    milestone_hint = metrics["coach"]["progress_toward_target"] if has_classes else "Pending"
+    
+    # Coach Tip
+    coach_tip = metrics["coach"].get("coach_tip", "Enroll in subjects to activate AI Coaching.")
+    
+    st.markdown(f"""
+    <div class="hero-card animate-fade-in">
+      <div class="hero-container">
+        <!-- LEFT COLUMN: Integrated Identity Workspace (35% width) -->
+        <div class="hero-identity-sidebar">
+          <div class="sidebar-profile-header">
+            {avatar_html}
+            <div class="sidebar-profile-info">
+              <span class="sidebar-student-name">{name}</span>
+              <span class="sidebar-dept">Computer Science & Engineering</span>
+              <span class="sidebar-sem">Semester VI • Roll #{ref_id}</span>
+            </div>
+          </div>
+          
+          <div class="sidebar-divider"></div>
+          
+          <!-- Security Badges Deck -->
+          <div class="sidebar-pills-deck">
+            <span class="pills-deck-title">SECURITY & DEPLOYMENT</span>
+            <div class="sidebar-pills-grid">
+              <span class="sidebar-tag success">✓ FACE VERIFIED</span>
+              <span class="sidebar-tag success">✓ QR ENABLED</span>
+              <span class="sidebar-tag info">📱 ACTIVE DEVICE: LOCALHOST</span>
+              <span class="sidebar-tag warning">⚡ SYNCED: 2M AGO</span>
+            </div>
+          </div>
+          
+          <div class="sidebar-divider"></div>
+          
+          <!-- Agenda Deck -->
+          <div class="sidebar-agenda">
+            <span class="agenda-deck-title">TODAY'S LECTURES</span>
+            <div class="agenda-deck">
+              {schedule_html}
+            </div>
+          </div>
+          
+          <div class="sidebar-divider"></div>
+          
+          <!-- AI Summary -->
+          <div class="sidebar-ai-summary">
+            <span class="summary-title">AI SUMMARY REPORT</span>
+            <p class="summary-desc">"Attendance is currently <b>{overall_percentage}%</b>. Student CSE identity is verified. Current safety status level is <b>{status_label.upper()}</b>."</p>
+          </div>
+        </div>
+        
+        <!-- RIGHT COLUMN: Integrated Analytics Console (65% width) -->
+        <div class="hero-analytics-console">
+          <div class="console-top-row">
+            <div class="console-main-kpi-block">
+              <span class="console-label-uppercase">OVERALL ATTENDANCE RATE</span>
+              <span class="console-large-val-shimmer">{overall_val}</span>
+              <div class="console-comparison-chip {status_class}">
+                <span class="status-pulse-dot {status_class}"></span>
+                <span>STATUS: {status_label.upper()} ZONE</span>
+              </div>
+            </div>
+            
+            <!-- Circular Progress Ring SVG -->
+            <div class="console-circular-gauge">
+              <svg viewBox="0 0 36 36" class="circular-chart {status_class}">
+                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path class="circle" stroke-dasharray="{overall_percentage}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              </svg>
+              <div class="gauge-percentage-overlay">{overall_percentage}%</div>
+            </div>
+          </div>
+          
+          <div class="console-alert-banner {status_class}">
+            {alert_msg}
+          </div>
+          
+          <!-- Integrated Metrics Grid -->
+          <div class="console-metrics-row">
+            <div class="console-sub-metric">
+              <span class="metric-lbl">ACTIVE STREAK</span>
+              <span class="metric-val">{streak_display}</span>
+              <span class="metric-desc">Consecutive active check-in days</span>
+            </div>
+            <div class="console-sub-metric">
+              <span class="metric-lbl">REGISTRY SUMMARY</span>
+              <span class="metric-val">{attended_display}</span>
+              <span class="metric-desc">Attended / Total classes held</span>
+            </div>
+            <div class="console-sub-metric">
+              <span class="metric-lbl">LAST SYNC RECORD</span>
+              <span class="metric-val">{last_display}</span>
+              <span class="metric-desc">Timestamp of latest log check-in</span>
+            </div>
+            <div class="console-sub-metric">
+              <span class="metric-lbl">FORECAST ZONE</span>
+              <span class="metric-val">{milestone_display}</span>
+              <span class="metric-desc">{milestone_hint}</span>
+            </div>
+          </div>
+          
+          <div class="console-divider"></div>
+          
+          <!-- Weekly Momentum Sparkline -->
+          <div class="console-trend-chart-deck">
+            <div class="trend-chart-header">
+              <span class="console-label-uppercase">WEEKLY MOMENTUM</span>
+              <span class="trend-direction-badge {status_class}">{metrics['risk']['trend_arrow']} {metrics['risk']['trend_str']}</span>
+            </div>
+            
+            <div class="sparkline-container-card">
+              <svg viewBox="0 0 200 40" class="sparkline-graphic-svg">
+                <defs>
+                  <linearGradient id="spark-gradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="var(--color-primary)" stop-opacity="0.35"/>
+                    <stop offset="100%" stop-color="var(--color-primary)" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path class="sparkline-line" d="M0,35 C20,32 40,25 65,28 C90,15 110,12 135,18 C160,5 180,2 200,8" />
+                <path class="sparkline-area" d="M0,35 C20,32 40,25 65,28 C90,15 110,12 135,18 C160,5 180,2 200,8 L200,40 L0,40 Z" fill="url(#spark-gradient)" />
+              </svg>
+            </div>
+          </div>
+          
+          <div class="hero-coach-tip" style="margin-top: 12px;">
+            📢 <b>AI Plan:</b> {coach_tip}
+          </div>
+        </div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def render_ai_workspace(metrics):
+    has_classes = metrics["attendance"]["total_classes"] > 0
+    coach_metrics = metrics["coach"]
+    
+    if not has_classes:
+        st.markdown(f"""
+        <div class="ai-coach-card">
+          <div class="ai-coach-header">
+            <span>AI Attendance Coach</span>
+            <span class="ai-coach-badge">OFFLINE</span>
+          </div>
+          <div class="ai-coach-empty-state">
+            <span style="font-size: 1.5rem;">📭</span>
+            <div class="empty-state-title">AI Coaching Offline</div>
+            <div class="empty-state-subtitle">Enroll in courses and check in to initialize diagnostics.</div>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+        return
+
+    priority_subject = coach_metrics["priority_subject"]
+    current_pct = f"{coach_metrics['current_percentage']}%"
+    target_pct = f"{coach_metrics['target_percentage']}%"
+    risk_label = coach_metrics["risk"]
+    risk_class = "safe" if risk_label == "Safe" else ("warning" if risk_label == "Warning" else "critical")
+    
+    recommendation = coach_metrics["recommendation"]
+    expected_outcome = f"{coach_metrics['expected_percentage']}%"
+    confidence = coach_metrics["confidence"]
+    last_updated_str = "Just Now"
+
+    st.markdown(f"""
+    <div class="ai-coach-card">
+      <div class="ai-coach-header">
+        <span>AI Attendance Coach</span>
+        <span class="ai-coach-badge val-{risk_class}">{risk_label.upper()}</span>
+      </div>
+      
+      <div class="ai-coach-grid">
+        <div class="ai-coach-cell">
+          <span class="ai-coach-label">Priority Subject</span>
+          <span class="ai-coach-val">{priority_subject}</span>
+        </div>
+        <div class="ai-coach-cell">
+          <span class="ai-coach-label">Current / Target</span>
+          <span class="ai-coach-val">{current_pct} / {target_pct}</span>
+        </div>
+        <div class="ai-coach-cell">
+          <span class="ai-coach-label">Recommendation</span>
+          <span class="ai-coach-val">{recommendation}</span>
+        </div>
+        <div class="ai-coach-cell">
+          <span class="ai-coach-label">Expected Outcome</span>
+          <span class="ai-coach-val">{expected_outcome}</span>
+        </div>
+        <div class="ai-coach-cell">
+          <span class="ai-coach-label">Confidence</span>
+          <span class="ai-coach-val">{confidence}</span>
+        </div>
+        <div class="ai-coach-cell">
+          <span class="ai-coach-label">Last Updated</span>
+          <span class="ai-coach-val font-monospace">{last_updated_str}</span>
+        </div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def render_quick_actions(metrics, logs, subjects_map, name):
+    row1_col1, row1_col2 = st.columns(2, gap="small")
+    row2_col1, row2_col2 = st.columns(2, gap="small")
+    
+    with row1_col1:
+        if st.button("**📷 Mark Attendance**\n\nOpen check-in scanner", key="action_camera", use_container_width=True):
+            st.toast("📷 Verification camera initiated. Please scan face.")
+            st.session_state["show_camera"] = True
+            st.rerun()
+            
+    with row1_col2:
+        if st.button("**📚 My Subjects**\n\nManage registered courses", key="action_subjects", use_container_width=True):
+            st.toast("Navigating to courses list below.")
+            
+    with row2_col1:
+        if st.button("**📊 Analytics**\n\nAnalyze semester trends", key="action_analytics", use_container_width=True):
+            st.toast("Navigating to analytics dashboards below.")
+            
+    with row2_col2:
+        # Prepare CSV data for download
+        import pandas as pd
+        report_rows = []
+        for log in logs:
+            sid = log.get("subject_id")
+            sinfo = subjects_map.get(sid, {})
+            sname = sinfo.get("name", "Unknown")
+            scode = sinfo.get("subject_code", "N/A")
+            sec_lbl = sinfo.get("section", "N/A")
+            present = "Present" if log.get("is_present") else "Absent"
+            ts = log.get("timestamp", "")
+            report_rows.append({
+                "Subject": sname,
+                "Code": scode,
+                "Section": sec_lbl,
+                "Status": present,
+                "Timestamp": ts
+            })
+        df_report = pd.DataFrame(report_rows)
+        csv_data = df_report.to_csv(index=False).encode('utf-8')
+
+        st.download_button(
+            label="**⬇ Export Report**\n\nDownload attendance CSV",
+            data=csv_data if logs else b"",
+            file_name=f"Attendance_Report_{name}.csv",
+            mime="text/csv",
+            use_container_width=True,
+            key="action_download",
+            disabled=(not logs or len(logs) == 0)
+        )
+
+
+def render_subject_card(sub, student_id):
+    pct = sub["attendance"]
+    status_class = sub["risk"].lower()
+    
+    faculty_display = ""
+    if sub.get("faculty") and sub["faculty"] != "Professor N/A":
+        faculty_display = f'<div class="subject-faculty">Prof. {sub["faculty"]}</div>'
+        
+    card_html = f"""
+    <div class="subject-card {status_class}">
+      <div class="subject-header">
+        <div class="subject-title-col">
+          <span class="subject-title">{sub["name"]}</span>
+          {faculty_display}
+        </div>
+        <span class="status-badge-small {status_class}">{sub["risk"]}</span>
+      </div>
+      
+      <div class="subject-divider"></div>
+      
+      <div class="subject-metric-row">
+        <span class="subject-metric-label">Attendance</span>
+        <span class="subject-metric-val val-{status_class}">{pct}%</span>
+      </div>
+      
+      <div class="progress-track-wrapper">
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill {status_class}" style="width: {pct}%"></div>
+        </div>
+        <div class="progress-marker marker-75" style="left: 75%;" title="Min. Required (75%)"></div>
+        <div class="progress-marker marker-85" style="left: 85%;" title="Target Goal (85%)"></div>
+      </div>
+      
+      <div class="subject-divider"></div>
+      
+      <div class="subject-details-grid">
+        <div class="details-cell">
+          <span class="details-label">Present</span>
+          <span class="details-val">{sub["attended"]}</span>
+        </div>
+        <div class="details-cell">
+          <span class="details-label">Absent</span>
+          <span class="details-val">{sub["missed"]}</span>
+        </div>
+        <div class="details-cell">
+          <span class="details-label">Total</span>
+          <span class="details-val">{sub["total"]}</span>
+        </div>
+      </div>
+      
+      <div class="subject-divider"></div>
+      
+      <div class="subject-forecast-grid">
+        <div class="forecast-cell">
+          <span class="forecast-label">Safe Leaves</span>
+          <span class="forecast-val">{sub["safe_margin"]}</span>
+        </div>
+        <div class="forecast-cell">
+          <span class="forecast-label">Next Target</span>
+          <span class="forecast-val">{sub["next_target"]}</span>
+        </div>
+        <div class="forecast-cell">
+          <span class="forecast-label">Trend</span>
+          <span class="forecast-val">{sub["trend"]}</span>
+        </div>
+      </div>
+      
+      <div class="subject-divider"></div>
+      
+      <div class="subject-ai-tip">
+        💡 <b>Recommendation:</b> {sub["recommendation"]}
+      </div>
+    </div>
+    """
+    st.markdown(card_html, unsafe_allow_html=True)
+    
+    if st.button("Unenroll", key=f"unenroll_{sub['subject_id']}", use_container_width=True, type="tertiary", icon=":material/delete_forever:"):
+        unenroll_student_to_subject(student_id, sub["subject_id"])
+        st.toast(f"Unenrolled from {sub['name']}")
+        st.rerun()
+
+
+def render_subject_grid(metrics, student_id):
+    subjects = metrics["subjects"]
+    
+    st.markdown("""
+    <div id="subject-performance" style="margin-bottom: 12px;">
+      <h3 style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin: 0;">Subject Performance</h3>
+      <p style="font-size: 13px; color: var(--text-secondary); margin: 2px 0 16px 0;">Your registered subjects and performance status</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    if not subjects:
+        st.markdown("""
+        <div class="empty-state-container">
+          <span style="font-size: 2rem;">📚</span>
+          <h4 class="empty-state-title">No Subjects Enrolled</h4>
+          <p class="empty-state-subtitle">Enroll in your first subject to begin attendance tracking.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        return
+        
+    chunk_size = 3
+    for chunk_idx in range(0, len(subjects), chunk_size):
+        chunk = subjects[chunk_idx : chunk_idx + chunk_size]
+        cols = st.columns(3, gap="medium")
+        for i, sub in enumerate(chunk):
+            with cols[i]:
+                render_subject_card(sub, student_id)
+
+
+
+
+def render_activity_timeline(metrics):
+    timeline_data = metrics["timeline"]
+    
+    st.markdown("""
+    <div style="margin-top: 24px; margin-bottom: 12px;">
+      <h3 style="font-size: 16px; font-weight: 600; color: #111111; margin: 0;">Recent Activity Timeline</h3>
+      <p style="font-size: 13px; color: var(--color-gray); margin: 2px 0 16px 0;">Chronological verification and check-in feed</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    if not timeline_data:
+        st.markdown("""
+        <div class="empty-state-container">
+          <span style="font-size: 2rem;">🕒</span>
+          <h4 class="empty-state-title">No Attendance Activity</h4>
+          <p class="empty-state-subtitle">Your attendance history will appear here once you begin marking attendance.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        return
+        
+    grouped_items = {}
+    for item in timeline_data:
+        g = item["group"]
+        if g not in grouped_items:
+            grouped_items[g] = []
+        grouped_items[g].append(item)
+        
+    group_order = ["Today", "Yesterday", "Last 7 Days", "Earlier"]
+    
+    timeline_html = '<div class="timeline-container">'
+    
+    idx = 0
+    for g in group_order:
+        if g not in grouped_items:
+            continue
+            
+        timeline_html += f'<div class="timeline-group-header">{g}</div>'
+        
+        for item in grouped_items[g]:
+            status_class = item["status"].lower()
+            
+            conf_badge = ""
+            if item.get("confidence") and status_class == "present":
+                conf_badge = f'<span class="timeline-confidence font-monospace">{item["confidence"]}% match</span>'
+                
+            delay = idx * 40
+            timeline_html += f"""
+            <div class="timeline-row animate-timeline-item" style="animation-delay: {delay}ms;">
+              <div class="timeline-left">
+                <div class="timeline-dot {status_class}">{item["icon"]}</div>
+                <div class="timeline-line"></div>
+              </div>
+              <div class="timeline-content">
+                <div class="timeline-title-row">
+                  <div class="timeline-event-header">
+                    <span class="timeline-subject">{item["subject"]}</span>
+                    <span class="timeline-method-badge">{item["method"]}</span>
+                  </div>
+                  <span class="status-pill {status_class}">{item["status"]}</span>
+                </div>
+                <div class="timeline-meta-row">
+                  <span class="timeline-time">{item["time_str"]}</span>
+                  {conf_badge}
+                </div>
+              </div>
+            </div>
+            """
+            idx += 1
+            
+    timeline_html += '</div>'
+    
+    st.markdown(f"""
+    <div class="kpi-card" style="margin-top: 10px; margin-bottom: 24px;">
+      {timeline_html}
+    </div>
+    """, unsafe_allow_html=True)
+
+
 def student_dashboard():
     sd         = st.session_state.student_data
     student_id = sd["student_id"]
@@ -354,6 +1248,19 @@ def student_dashboard():
     total_all    = sum(v["total"]    for v in stats_map.values()) if stats_map else 0
     attended_all = sum(v["attended"] for v in stats_map.values()) if stats_map else 0
     pct_all      = int(attended_all / total_all * 100) if total_all > 0 else 0
+
+    # Call modular dashboard metrics provider
+    metrics = prepare_dashboard_metrics(student_id, name, logs, stats_map, pct_all, subjects_map, teachers_map)
+
+    # Keep compatibility aliases for unchanged layout sections (Phases 2-6)
+    trend_str = metrics["risk"]["trend_str"]
+    trend_color = metrics["risk"]["trend_color"]
+    trend_arrow = metrics["risk"]["trend_arrow"]
+    status_label = metrics["risk"]["status_label"]
+    status_class = metrics["risk"]["status_class"]
+    today_str = datetime.now().strftime("%A, %d %B %Y")
+    motivation_msg = metrics["coach"]["coach_tip"]
+    greeting = datetime.now().strftime("%I:%M %p")
 
     # Greeting based on local time
     current_hour = datetime.now().hour
@@ -445,20 +1352,30 @@ def student_dashboard():
     # HTML inject header & hero & stylesheet & scripts
     st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 :root {{
-  --primary-color: #6366F1;
-  --secondary-color: #818CF8;
-  --success-color: #22C55E;
-  --warning-color: #F59E0B;
-  --danger-color: #EF4444;
-  --background-color: #F8FAFC;
-  --card-bg: #FFFFFF;
-  --text-primary: #0F172A;
-  --text-secondary: #64748B;
-  --text-hint: #9CA3AF;
-  --border-color: #E2E8F0;
+  /* Design Tokens */
+  --color-primary: #5865F2;
+  --color-success: #22C55E;
+  --color-warning: #FFD600;
+  --color-danger: #EF4444;
+  --color-gray: #64748B;
+  --color-bg-light: #FAFAFA;
+  
+  --border-thick: 2.5px solid #111111;
+  --border-thin: 1.5px solid #111111;
+  --shadow-offset: 4px 4px 0 #111111;
+  
+  /* Typography Scale */
+  --font-family-display: 'Outfit', sans-serif;
+  --font-family-body: 'Inter', sans-serif;
+  --font-weight-display: 800;
+  --font-weight-bold: 700;
+  --font-weight-medium: 600;
+  --font-weight-normal: 500;
+  --font-size-display: 1.6rem;
+  --font-size-title: 1.2rem;
+  --font-size-body: 0.95rem;
+  --font-size-hint: 0.72rem;
 }}
 
 /* Global resets and chrome removal */
@@ -471,8 +1388,74 @@ def student_dashboard():
   padding-top: 1rem !important;
   padding-left: 1.5rem !important;
   padding-right: 1.5rem !important;
-  background-color: var(--background-color);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  background: radial-gradient(circle at 50% 0%, rgba(88, 101, 242, 0.06) 0%, #FAFAFA 70%) !important;
+  font-family: var(--font-family-body), -apple-system, BlinkMacSystemFont, sans-serif !important;
+}}
+
+/* Shimmer and Glow Animations */
+@keyframes shimmer {{
+  0% {{ background-position: -200% 0; }}
+  100% {{ background-position: 200% 0; }}
+}}
+.shimmer-text {{
+  background: linear-gradient(90deg, #111111 20%, var(--color-primary) 50%, #111111 80%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 3s infinite linear;
+  display: inline-block;
+}}
+
+/* Avatar Glow */
+.avatar-container::before {{
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  background: radial-gradient(circle, rgba(88, 101, 242, 0.45) 0%, transparent 70%);
+  z-index: 1;
+  border-radius: 50%;
+  animation: pulseGlow 2.5s infinite alternate;
+}}
+@keyframes pulseGlow {{
+  0% {{ transform: scale(0.95); opacity: 0.4; }}
+  100% {{ transform: scale(1.1); opacity: 0.9; }}
+}}
+
+/* Hero Pills */
+.hero-left-metrics-grid {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  margin-bottom: 4px;
+}}
+.hero-pill {{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FFFFFF !important;
+  border: var(--border-thin) !important;
+  border-radius: 20px !important;
+  padding: 4px 10px !important;
+  font-family: var(--font-family-body) !important;
+  font-size: 0.72rem !important;
+  font-weight: var(--font-weight-bold) !important;
+  color: #111111 !important;
+  box-shadow: 1px 1px 0 #111111 !important;
+  transition: transform 0.2s !important;
+}}
+.hero-pill:hover {{
+  transform: translateY(-1px);
+}}
+.hero-pill-icon {{
+  font-size: 0.85rem;
+}}
+.hero-pill-lbl {{
+  color: var(--color-gray);
+  font-weight: var(--font-weight-normal);
 }}
 
 /* Sections spacing */
@@ -498,294 +1481,719 @@ def student_dashboard():
 .hover-lift:hover {{
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(99, 102, 241, 0.12);
-  border-color: var(--primary-color);
+  border-color: var(--color-primary);
 }}
 
-/* Hero Card Styles */
+/* Hero / Command Center Styles */
 .hero-card {{
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-  border-radius: 24px;
-  padding: 32px;
-  color: #FFFFFF;
-  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15);
+  background: #FFFFFF !important;
+  border: var(--border-thick) !important;
+  border-radius: 16px !important;
+  padding: 24px !important;
+  color: #111111 !important;
+  box-shadow: var(--shadow-offset) !important;
 }}
 .hero-container {{
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: stretch;
   flex-wrap: wrap;
-  gap: 24px;
+  gap: 20px;
 }}
 .hero-left {{
   flex: 1;
   min-width: 280px;
-}}
-.hero-greeting {{
-  font-size: 24px;
-  font-weight: 500;
-  opacity: 0.9;
-  display: block;
-}}
-.hero-student-name {{
-  font-size: 32px;
-  font-weight: 700;
-  display: block;
-  margin-top: 4px;
-  letter-spacing: -0.02em;
-}}
-.hero-motivation {{
-  font-size: 15px;
-  opacity: 0.85;
-  margin: 12px 0 20px 0;
-}}
-.hero-meta-row {{
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 13px;
-  opacity: 0.75;
-  flex-wrap: wrap;
-}}
-.hero-meta-divider {{
-  opacity: 0.5;
-}}
-.hero-right {{
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+}}
+.hero-profile-row {{
+  display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }}
-.circular-progress-container {{
+.avatar-container {{
   position: relative;
-  width: 120px;
-  height: 120px;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
 }}
-.progress-ring {{
-  transform: rotate(-90deg);
-}}
-.progress-ring-fill {{
-  transition: stroke-dashoffset 1s ease-out;
-}}
-.progress-text-container {{
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 120px;
-  height: 120px;
+.hero-avatar {{
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  border: var(--border-thick);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #3B82F6 100%);
+  color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: var(--font-family-display);
+  font-size: 1.4rem;
+  font-weight: var(--font-weight-display);
+  box-shadow: 2px 2px 0 #111111;
 }}
-.progress-pct-value {{
-  font-size: 24px;
-  font-weight: 700;
+.avatar-online-indicator {{
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  background: var(--color-success);
+  border: 2px solid #FFFFFF;
+  border-radius: 50%;
+  box-shadow: 1px 1px 0 #111111;
+  animation: pulseOpacity 1s infinite alternate;
 }}
-.status-badge-hero {{
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 12px;
-  border-radius: 9999px;
+.avatar-verified-badge {{
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+  background: #3B82F6;
+  color: #FFFFFF;
+  font-size: 0.65rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1.5px solid #FFFFFF;
+  box-shadow: 1px 1px 0 #111111;
+}}
+.hero-greeting-col {{
+  display: flex;
+  flex-direction: column;
+}}
+.hero-greeting {{
+  font-family: var(--font-family-body);
+  font-size: 0.85rem;
+  font-weight: var(--font-weight-bold);
   text-transform: uppercase;
+  color: var(--color-gray);
   letter-spacing: 0.05em;
 }}
-.status-badge-hero.safe {{
-  background-color: var(--success-color);
-  color: #FFFFFF;
+.hero-student-name {{
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-display);
+  font-weight: var(--font-weight-display);
+  color: #111111;
+  letter-spacing: -0.02em;
 }}
-.status-badge-hero.warning {{
-  background-color: var(--warning-color);
-  color: #FFFFFF;
+.hero-meta-section {{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: var(--border-thin);
+  padding-top: 12px;
 }}
-.status-badge-hero.at-risk {{
-  background-color: var(--danger-color);
-  color: #FFFFFF;
+.hero-meta-item {{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}}
+.hero-meta-label {{
+  font-family: var(--font-family-body);
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray);
+  text-transform: uppercase;
+}}
+.hero-meta-val {{
+  font-family: monospace;
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-bold);
+  color: #111111;
+}}
+.hero-coach-tip {{
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: #333333;
+  border: var(--border-thin);
+  border-left: 4px solid var(--color-primary);
+  padding: 12px;
+  background: rgba(88, 101, 242, 0.05);
+  margin-top: 16px;
+  border-radius: 8px;
+}}
+.hero-right-console {{
+  flex: 1;
+  min-width: 300px;
+  background: var(--color-bg-light);
+  border: var(--border-thick);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: var(--shadow-offset);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}}
+.console-header {{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: var(--border-thin);
+  padding-bottom: 6px;
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-hint);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray);
+  text-transform: uppercase;
+}}
+.console-status-dot {{
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-success);
+}}
+.console-status-dot::before {{
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--color-success);
+  border-radius: 50%;
+  animation: pulseOpacity 1s infinite alternate;
+}}
+@keyframes pulseOpacity {{
+  0% {{ opacity: 0.4; }}
+  100% {{ opacity: 1; }}
+}}
+.console-main-layout {{
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}}
+.overall-item {{
+  flex: 1.2;
+}}
+.console-sub-item-box {{
+  flex: 0.8;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px;
+  background: #FFFFFF;
+  border: var(--border-thin);
+  border-radius: 6px;
+  justify-content: center;
+}}
+.console-val-large {{
+  font-family: var(--font-family-display);
+  font-size: 1.8rem;
+  font-weight: var(--font-weight-display);
+  color: #111111;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-top: 2px;
+}}
+.console-grid {{
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}}
+.console-item {{
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px;
+  background: #FFFFFF;
+  border: var(--border-thin);
+  border-radius: 6px;
+}}
+.console-label {{
+  font-family: var(--font-family-body);
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}}
+.console-val {{
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-display);
+  color: #111111;
+  margin-top: 1px;
+}}
+.console-hint {{
+  font-family: var(--font-family-body);
+  font-size: 0.58rem;
+  color: var(--color-gray);
+  margin-top: 1px;
+}}
+.console-val.val-safe {{ color: var(--color-success); }}
+.console-val.val-warning {{ color: #D97706; }}
+.console-val.val-danger {{ color: var(--color-danger); }}
+.console-val.val-at-risk {{ color: var(--color-danger); }}
+.console-val.val-gray {{ color: var(--color-gray); }}
+
+
+
+/* AI Coach / Workspace Styles */
+.ai-coach-card {{
+  background: #FFFFFF !important;
+  border: var(--border-thick) !important;
+  border-radius: 16px !important;
+  padding: 20px !important;
+  color: #111111 !important;
+  box-shadow: var(--shadow-offset) !important;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}}
+.ai-coach-header {{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: var(--border-thin);
+  padding-bottom: 8px;
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-display);
+  text-transform: uppercase;
+  color: #111111;
+}}
+.ai-coach-badge {{
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-bold);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: var(--border-thin);
+  background: var(--color-bg-light);
+}}
+.ai-coach-badge.val-safe {{
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--color-success);
+}}
+.ai-coach-badge.val-warning {{
+  background: rgba(255, 214, 0, 0.15);
+  color: #B45309;
+}}
+.ai-coach-badge.val-critical {{
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-danger);
+}}
+.ai-coach-grid {{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 10px;
+  flex-grow: 1;
+}}
+.ai-coach-cell {{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.1);
+  padding-bottom: 4px;
+}}
+.ai-coach-cell:last-child {{
+  border-bottom: none;
+}}
+.ai-coach-label {{
+  font-family: var(--font-family-body);
+  font-size: 0.72rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-gray);
+}}
+.ai-coach-val {{
+  font-family: var(--font-family-body);
+  font-size: 0.78rem;
+  font-weight: var(--font-weight-bold);
+  color: #111111;
+  text-align: right;
+  max-width: 60%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}}
+.ai-coach-empty-state {{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex-grow: 1;
+  gap: 6px;
+  margin-top: 10px;
 }}
 
 /* Quick Actions Cards */
 .action-card {{
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  border-radius: 12px;
-  padding: 16px;
+  background: #FFFFFF !important;
+  border: var(--border-thin) !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
   display: flex;
   flex-direction: column;
   height: 110px;
   justify-content: center;
-  transition: all 0.25s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal), border-color var(--transition-normal);
+  box-shadow: var(--shadow-sm) !important;
 }}
 .action-card:hover {{
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.1);
-  border-color: var(--primary-color);
-  background: var(--card-bg);
+  transform: var(--hover-lift);
+  box-shadow: var(--hover-shadow) !important;
+  border-color: var(--color-primary) !important;
 }}
 .action-icon {{
   font-size: 20px;
   margin-bottom: 6px;
 }}
 .action-title {{
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-bold);
+  color: #111111;
 }}
 .action-sub {{
-  font-size: 11px;
-  color: var(--text-secondary);
+  font-family: var(--font-family-body);
+  font-size: 0.72rem;
+  color: var(--color-gray);
   margin-top: 2px;
 }}
 
-/* Custom styling for the Streamlit download button */
+/* Custom styling for the Streamlit download button as a module card */
 div[data-testid="stDownloadButton"] > button {{
-  background: rgba(255, 255, 255, 0.7) !important;
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
-  border: 1px solid rgba(226, 232, 240, 0.8) !important;
-  border-radius: 12px !important;
-  padding: 16px !important;
+  background: #FFFFFF !important;
+  border: var(--border-thick) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--shadow-offset) !important;
+  color: #111111 !important;
+  transition: transform 0.2s, box-shadow 0.2s !important;
+  padding: 12px 16px !important;
+  font-family: var(--font-family-display) !important;
+  font-size: 13px !important;
+  min-height: 80px !important;
+  text-align: left !important;
+  align-items: flex-start !important;
   display: flex !important;
   flex-direction: column !important;
-  height: 110px !important;
   justify-content: center !important;
-  align-items: flex-start !important;
-  text-align: left !important;
-  transition: all 0.25s ease !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
-  color: var(--text-primary) !important;
   line-height: 1.3 !important;
   width: 100% !important;
 }}
 div[data-testid="stDownloadButton"] > button:hover {{
-  transform: translateY(-3px) !important;
-  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.1) !important;
-  border-color: var(--primary-color) !important;
-  background: var(--card-bg) !important;
+  transform: var(--hover-lift) !important;
+  box-shadow: var(--hover-shadow) !important;
+  border-color: var(--color-primary) !important;
 }}
 div[data-testid="stDownloadButton"] > button p {{
   margin: 0 !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  color: var(--text-primary) !important;
+  font-family: var(--font-family-display) !important;
+  font-size: var(--font-size-body) !important;
+  font-weight: var(--font-weight-bold) !important;
+  color: #111111 !important;
 }}
 div[data-testid="stDownloadButton"] > button::after {{
-  content: 'Save history to local device';
-  font-size: 11px;
-  color: var(--text-secondary);
+  content: 'Save history to local CSV';
+  font-family: var(--font-family-body);
+  font-size: 0.72rem;
+  color: var(--color-gray);
   margin-top: 2px;
   font-weight: 400;
 }}
 
-/* KPI Card Grid */
-.kpi-card {{
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+/* Analytics Workspace */
+.analytics-summary-card {{
+  background: #FFFFFF !important;
+  border: var(--border-thick) !important;
+  border-radius: 16px !important;
+  padding: 20px !important;
+  color: #111111 !important;
+  box-shadow: var(--shadow-offset) !important;
+  min-height: 285px;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  justify-content: space-between;
 }}
-.kpi-icon-container {{
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
+.analytics-header {{
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  background-color: var(--accent-light, #EEF2FF);
-  color: var(--primary-color);
-  margin-bottom: 12px;
-  font-size: 18px;
-}}
-.kpi-value {{
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.2;
-}}
-.kpi-label {{
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-secondary);
+  border-bottom: var(--border-thin);
+  padding-bottom: 8px;
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-display);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-top: 4px;
+  color: #111111;
 }}
-
-/* Insights Grid */
-.insights-grid {{
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}}
-.insight-tile {{
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-}}
-.insight-header {{
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* Charts Workspace */
+.chart-container-wrapper {{
+  position: relative;
+  padding: 20px;
+  background: #FFFFFF;
+  border: var(--border-thick);
+  border-radius: 16px;
+  box-shadow: var(--shadow-offset);
   margin-bottom: 8px;
 }}
-.insight-icon {{
-  font-size: 16px;
-}}
-.insight-label {{
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}}
-.insight-val {{
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.2;
-}}
-.insight-desc {{
-  font-size: 11px;
-  color: var(--text-secondary);
-  margin-top: 4px;
-}}
-
-/* Subject Performance Card */
-.subject-card {{
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+.chart-container {{
   position: relative;
-  overflow: hidden;
+  height: 180px;
+  margin-top: 10px;
+  border-bottom: var(--border-thin);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  padding-left: 55px;
+}}
+.chart-y-axis {{
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 50px;
   display: flex;
   flex-direction: column;
-  height: 250px;
   justify-content: space-between;
-  transition: all 0.25s ease;
+  font-family: monospace;
+  font-size: 8px;
+  color: var(--color-gray);
+  text-align: right;
+  padding-right: 8px;
 }}
-.subject-card:hover {{
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.12);
+.chart-gridline {{
+  position: absolute;
+  left: 55px;
+  right: 0;
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.05);
+  z-index: 1;
 }}
-.subject-card::before {{
+.chart-ref-line {{
+  position: absolute;
+  left: 55px;
+  right: 0;
+  border-top: 1.5px dashed;
+  z-index: 2;
+}}
+.ref-line-lbl {{
+  position: absolute;
+  right: 8px;
+  top: -8px;
+  font-family: var(--font-family-body);
+  font-size: 7px;
+  font-weight: 700;
+  color: #FFFFFF;
+  padding: 1px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  z-index: 5;
+  letter-spacing: 0.03em;
+}}
+.chart-bar-wrapper {{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 60px;
+  height: 100%;
+  justify-content: flex-end;
+  position: relative;
+  z-index: 4;
+}}
+@keyframes barGrow {{
+  from {{ height: 0%; }}
+  to {{ height: var(--bar-height); }}
+}}
+.chart-bar {{
+  width: 24px;
+  border-top-left-radius: 6px !important;
+  border-top-right-radius: 6px !important;
+  height: 0%;
+  animation: barGrow 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}}
+.chart-bar.safe {{
+  background: linear-gradient(180deg, var(--color-success) 0%, rgba(34, 197, 94, 0.4) 100%) !important;
+}}
+.chart-bar.warning {{
+  background: linear-gradient(180deg, var(--color-warning) 0%, rgba(245, 158, 11, 0.4) 100%) !important;
+}}
+.chart-bar.critical {{
+  background: linear-gradient(180deg, var(--color-danger) 0%, rgba(239, 68, 68, 0.4) 100%) !important;
+}}
+.chart-bar:hover {{
+  transform: translateY(-4px) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}}
+.chart-bar .tooltip-text {{
+  visibility: hidden;
+  width: 130px;
+  background-color: #111111;
+  color: #FFFFFF;
+  text-align: left;
+  border-radius: 6px;
+  padding: 8px;
+  position: absolute;
+  z-index: 100;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  font-family: var(--font-family-body);
+  font-size: 10px;
+  line-height: 1.3;
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+}}
+.chart-bar .tooltip-text::after {{
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #111111 transparent transparent transparent;
+}}
+.chart-bar:hover .tooltip-text {{
+  visibility: visible;
+  opacity: 1;
+}}
+.chart-x-label {{
+  font-family: var(--font-family-body);
+  font-size: 9px;
+  color: var(--color-gray);
+  margin-top: 6px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}}
+
+/* Legends */
+.chart-legend-container {{
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 12px;
+}}
+.legend-item {{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-family-body);
+  font-size: 10px;
+  color: var(--color-gray);
+}}
+.legend-dot {{
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}}
+.legend-dot.dot-safe {{ background-color: var(--color-success); }}
+.legend-dot.dot-warning {{ background-color: var(--color-warning); }}
+.legend-dot.dot-average {{ background-color: var(--color-primary); }}
+
+/* Empty States */
+.chart-empty-state {{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 16px;
+  border: 2px dashed rgba(0, 0, 0, 0.12) !important;
+  border-radius: 12px !important;
+  background: var(--color-bg-light) !important;
+  max-width: 100% !important;
+  margin: 10px auto !important;
+  gap: 8px;
+}}
+.empty-state-title {{
+  font-family: var(--font-family-display);
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #111111 !important;
+  margin: 0 !important;
+}}
+.empty-state-subtitle {{
+  font-family: var(--font-family-body);
+  font-size: 11px !important;
+  color: var(--color-gray) !important;
+  margin: 0 !important;
+}}
+
+/* Customizing Streamlit Tabs */
+div[data-testid="stTabs"] button {{
+  font-family: var(--font-family-display) !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  color: var(--color-gray) !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  padding: 8px 16px !important;
+  transition: all 0.2s ease !important;
+}}
+div[data-testid="stTabs"] button[aria-selected="true"] {{
+  color: var(--color-primary) !important;
+  border-bottom: 2px solid var(--color-primary) !important;
+}}
+div[data-testid="stTabs"] button:hover {{
+  color: var(--color-primary) !important;
+  opacity: 0.8;
+}}
+div[data-testid="stTabs"] [data-testid="stTabBorder"] {{
+  border-bottom: 1.5px solid rgba(0, 0, 0, 0.08) !important;
+}}
+
+.spark-line-graphic {{
+  height: 60px;
+  border-bottom: 1.5px dashed var(--color-gray);
+  position: relative;
+  margin-top: 10px;
+}}
+.spark-line-graphic::before {{
   content: '';
   position: absolute;
-  top: 0;
   left: 0;
-  bottom: 0;
-  width: 4px;
+  right: 0;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
 }}
-.subject-card.safe::before {{ background-color: var(--success-color); }}
-.subject-card.warning::before {{ background-color: var(--warning-color); }}
-.subject-card.critical::before {{ background-color: var(--danger-color); }}
+.spark-line-graphic.trend-improving::before {{
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 30' fill='none' stroke='%2322C55E' stroke-width='2'%3E%3Cpath d='M0,25 C20,22 40,15 60,18 C80,10 90,5 100,2'/%3E%3C/svg%3E");
+}}
+.spark-line-graphic.trend-declining::before {{
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 30' fill='none' stroke='%23EF4444' stroke-width='2'%3E%3Cpath d='M0,5 C20,8 40,15 60,12 C80,20 90,25 100,28'/%3E%3C/svg%3E");
+}}
+.spark-line-graphic.trend-stable::before {{
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 30' fill='none' stroke='%2364748B' stroke-width='2'%3E%3Cpath d='M0,15 C30,16 60,14 100,15'/%3E%3C/svg%3E");
+}}
+
+/* Subject Cards Workspace */
+.subject-card {{
+  background: #FFFFFF !important;
+  border: var(--border-thick) !important;
+  border-radius: 16px !important;
+  padding: 20px !important;
+  color: #111111 !important;
+  box-shadow: var(--shadow-offset) !important;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}}
+.subject-card:hover {{
+  transform: var(--hover-lift);
+  box-shadow: var(--hover-shadow) !important;
+}}
+.subject-card.safe {{ border-color: var(--color-success) !important; }}
+.subject-card.warning {{ border-color: var(--color-warning) !important; }}
+.subject-card.critical {{ border-color: var(--color-danger) !important; }}
 
 .subject-header {{
   display: flex;
@@ -793,109 +2201,197 @@ div[data-testid="stDownloadButton"] > button::after {{
   align-items: flex-start;
 }}
 .subject-title {{
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-primary);
-  padding-right: 12px;
+  font-family: var(--font-family-display);
+  font-size: 1.1rem;
+  font-weight: var(--font-weight-display);
+  color: #111111;
+  line-height: 1.2;
+}}
+.subject-faculty {{
+  font-family: var(--font-family-body);
+  font-size: 0.72rem;
+  color: var(--color-gray);
+  margin-top: 2px;
 }}
 .status-badge-small {{
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 9999px;
+  font-family: var(--font-family-display);
+  font-size: 0.58rem;
+  font-weight: var(--font-weight-bold);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: var(--border-thin);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  flex-shrink: 0;
+  letter-spacing: 0.05em;
 }}
 .status-badge-small.safe {{
-  background-color: #D1FAE5;
-  color: var(--success-color);
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--color-success);
 }}
 .status-badge-small.warning {{
-  background-color: #FEF3C7;
-  color: var(--warning-color);
+  background: rgba(255, 214, 0, 0.15);
+  color: #B45309;
 }}
 .status-badge-small.critical {{
-  background-color: #FEE2E2;
-  color: var(--danger-color);
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-danger);
 }}
 
-.subject-body {{
-  display: flex;
-  flex-direction: column;
-  margin-top: 10px;
-  flex-grow: 1;
+.subject-divider {{
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+  margin: 10px 0;
 }}
-.subject-meta {{
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin-bottom: 2px;
-}}
-.card-divider {{
-  border: 0;
-  border-top: 1px solid var(--border-color);
-  margin: 12px 0;
-}}
-.progress-label-row {{
+
+.subject-metric-row {{
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  margin-bottom: 4px;
+  align-items: center;
 }}
-.pct-val.safe {{ color: var(--success-color); font-weight: 600; }}
-.pct-val.warning {{ color: var(--warning-color); font-weight: 600; }}
-.pct-val.critical {{ color: var(--danger-color); font-weight: 600; }}
+.subject-metric-label {{
+  font-family: var(--font-family-body);
+  font-size: 0.78rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-gray);
+}}
+.subject-metric-val {{
+  font-family: var(--font-family-display);
+  font-size: 1.3rem;
+  font-weight: var(--font-weight-display);
+}}
+.subject-metric-val.val-safe {{ color: var(--color-success); }}
+.subject-metric-val.val-warning {{ color: #B45309; }}
+.subject-metric-val.val-critical {{ color: var(--color-danger); }}
 
-/* Progress Fill Animation */
-@keyframes prog-fill {{
-  from {{ width: 0%; }}
-  to {{ width: var(--target-width); }}
+.progress-track-wrapper {{
+  position: relative;
+  width: 100%;
+  padding: 8px 0;
 }}
 .progress-bar-track {{
-  height: 6px;
-  background-color: var(--border-color);
-  border-radius: 9999px;
+  height: 8px;
+  background-color: var(--color-bg-light);
+  border-radius: 4px;
+  border: var(--border-thin);
   overflow: hidden;
-  margin-bottom: 14px;
 }}
 .progress-bar-fill {{
   height: 100%;
-  border-radius: 9999px;
-  animation: prog-fill 0.8s ease-out forwards;
+  border-radius: 2px;
 }}
-.progress-bar-fill.safe {{
-  background: linear-gradient(90deg, #A7F3D0 0%, var(--success-color) 100%);
+.progress-bar-fill.safe {{ background: var(--color-success); }}
+.progress-bar-fill.warning {{ background: var(--color-warning); }}
+.progress-bar-fill.critical {{ background: var(--color-danger); }}
+
+.progress-marker {{
+  position: absolute;
+  top: 2px;
+  width: 3px;
+  height: 20px;
+  background: #111111;
+  z-index: 10;
 }}
-.progress-bar-fill.warning {{
-  background: linear-gradient(90deg, #FDE68A 0%, var(--warning-color) 100%);
+.progress-marker::after {{
+  content: attr(title);
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111111;
+  color: #FFFFFF;
+  font-size: 8px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  white-space: nowrap;
+  display: none;
 }}
-.progress-bar-fill.critical {{
-  background: linear-gradient(90deg, #FCA5A5 0%, var(--danger-color) 100%);
+.progress-marker:hover::after {{
+  display: block;
 }}
 
-.subject-footer-stats {{
+/* Grid Details */
+.subject-details-grid,
+.subject-forecast-grid {{
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  border-top: 1px solid var(--border-color);
-  padding-top: 10px;
+  gap: 8px;
   text-align: center;
 }}
-.footer-stat-col {{
+.details-cell,
+.forecast-cell {{
   display: flex;
   flex-direction: column;
 }}
-.footer-stat-col:not(:last-child) {{
-  border-right: 1px solid var(--border-color);
+.details-label,
+.forecast-label {{
+  font-family: var(--font-family-body);
+  font-size: 0.58rem;
+  color: var(--color-gray);
+  text-transform: uppercase;
 }}
-.stat-num {{
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-primary);
+.details-val,
+.forecast-val {{
+  font-family: var(--font-family-display);
+  font-size: 0.85rem;
+  font-weight: var(--font-weight-bold);
+  color: #111111;
+  margin-top: 2px;
 }}
-.stat-num.text-red {{
-  color: var(--danger-color);
+.subject-ai-tip {{
+  font-family: var(--font-family-body);
+  font-size: 0.72rem;
+  color: #333333;
+  background: var(--color-bg-light);
+  padding: 8px;
+  border-radius: 6px;
+  border-left: 2.5px solid var(--color-primary);
+}}
+
+/* Streamlit button custom dashboard widget overrides */
+div[data-testid="stButton"] button[key^="action_"] {{
+  background: #FFFFFF !important;
+  border: var(--border-thick) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--shadow-offset) !important;
+  color: #111111 !important;
+  transition: transform 0.2s, box-shadow 0.2s !important;
+  padding: 12px 16px !important;
+  font-family: var(--font-family-display) !important;
+  font-size: 13px !important;
+  min-height: 80px !important;
+  text-align: left !important;
+  align-items: flex-start !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  line-height: 1.3 !important;
+}}
+div[data-testid="stButton"] button[key^="action_"]:hover {{
+  transform: var(--hover-lift) !important;
+  box-shadow: var(--hover-shadow) !important;
+  border-color: var(--color-primary) !important;
+}}
+div[data-testid="stButton"] button[key^="action_"] p {{
+  margin: 0 !important;
+  font-weight: var(--font-weight-bold) !important;
+}}
+
+/* Unenroll Button low priority secondary override */
+div[data-testid="stButton"] button[key^="unenroll_"] {{
+  background: transparent !important;
+  color: var(--color-gray) !important;
+  border: var(--border-thin) !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  padding: 4px 10px !important;
+  height: auto !important;
+  margin-top: 8px !important;
+  transition: all 0.2s ease !important;
+  width: 100% !important;
+}}
+div[data-testid="stButton"] button[key^="unenroll_"]:hover {{
+  color: var(--color-danger) !important;
+  border-color: var(--color-danger) !important;
+  background-color: rgba(239, 68, 68, 0.05) !important;
 }}
 .stat-lbl {{
   font-size: 10px;
@@ -904,42 +2400,29 @@ div[data-testid="stDownloadButton"] > button::after {{
 }}
 
 /* Custom styling to place Unenroll button below cards neatly */
-div[data-testid="stButton"] button[key^="unenroll_"] {{
-  background-color: transparent !important;
-  color: var(--text-secondary) !important;
-  border: 1px solid var(--border-color) !important;
-  border-radius: 8px !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  padding: 6px 12px !important;
-  height: auto !important;
-  margin-top: 8px !important;
-  transition: all 0.2s ease !important;
-  width: 100% !important;
-}}
-div[data-testid="stButton"] button[key^="unenroll_"]:hover {{
-  color: var(--danger-color) !important;
-  border-color: var(--danger-color) !important;
-  background-color: rgba(239, 68, 68, 0.05) !important;
-}}
-
-/* Custom styling for top Actions Buttons */
-div[data-testid="stButton"] button[key^="action_"] {{
-  border-radius: 8px !important;
-  font-weight: 500 !important;
-  font-size: 13px !important;
-  transition: all 0.2s ease !important;
-}}
-
-/* Timeline Styles */
+div[data-testid="stButton"] button[key^="unenroll_"]/* Timeline Workspace */
 .timeline-container {{
   display: flex;
   flex-direction: column;
+  position: relative;
+  padding-left: 10px;
+}}
+.timeline-group-header {{
+  font-family: var(--font-family-display);
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-display);
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 16px 0 12px 0;
+}}
+.timeline-group-header:first-child {{
+  margin-top: 4px;
 }}
 .timeline-row {{
   display: flex;
   align-items: flex-start;
-  padding-bottom: 16px;
+  padding-bottom: 18px;
   position: relative;
 }}
 .timeline-left {{
@@ -951,31 +2434,30 @@ div[data-testid="stButton"] button[key^="action_"] {{
   align-self: stretch;
 }}
 .timeline-dot {{
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
+  background: #FFFFFF;
+  border: var(--border-thin);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 0.8rem;
   z-index: 2;
-  margin-top: 2px;
+  box-shadow: 1px 1px 0 #111111;
 }}
 .timeline-dot.present {{
-  background-color: rgba(34, 197, 94, 0.15);
-  color: var(--success-color);
+  border-color: var(--color-success);
 }}
 .timeline-dot.absent {{
-  background-color: rgba(239, 68, 68, 0.15);
-  color: var(--danger-color);
+  border-color: var(--color-danger);
 }}
 .timeline-line {{
   position: absolute;
-  top: 22px;
-  bottom: -16px;
+  top: 26px;
+  bottom: -18px;
   width: 1.5px;
-  background-color: var(--border-color);
+  background-color: #111111;
   z-index: 1;
 }}
 .timeline-row:last-child .timeline-line {{
@@ -983,51 +2465,528 @@ div[data-testid="stButton"] button[key^="action_"] {{
 }}
 .timeline-content {{
   flex: 1;
-  padding-left: 12px;
+  padding-left: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }}
 .timeline-title-row {{
   display: flex;
   justify-content: space-between;
   align-items: center;
 }}
-.timeline-subject {{
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
+.timeline-event-header {{
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }}
-.timeline-meta {{
-  font-size: 11px;
-  color: var(--text-secondary);
-  margin-top: 2px;
+.timeline-subject {{
+  font-family: var(--font-family-display);
+  font-size: 0.85rem;
+  font-weight: var(--font-weight-bold);
+  color: #111111;
+}}
+.timeline-method-badge {{
+  font-family: var(--font-family-body);
+  font-size: 0.65rem;
+  color: var(--color-gray);
+  background: var(--color-bg-light);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }}
 .status-pill {{
-  font-size: 10px;
-  font-weight: 600;
+  font-family: var(--font-family-display);
+  font-size: 0.58rem;
+  font-weight: var(--font-weight-bold);
   padding: 2px 8px;
-  border-radius: 9999px;
+  border-radius: 4px;
+  border: var(--border-thin);
 }}
 .status-pill.present {{
-  background-color: rgba(34, 197, 94, 0.1);
-  color: var(--success-color);
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--color-success);
+  border-color: var(--color-success);
 }}
 .status-pill.absent {{
-  background-color: rgba(239, 68, 68, 0.1);
-  color: var(--danger-color);
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-danger);
+  border-color: var(--color-danger);
 }}
-.empty-timeline {{
-  text-align: center;
-  padding: 30px;
-  color: var(--text-secondary);
+.timeline-meta-row {{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}}
+.timeline-time {{
+  font-family: monospace;
+  font-size: 0.72rem;
+  color: var(--color-gray);
+}}
+.timeline-confidence {{
+  font-size: 0.68rem;
+  color: var(--color-primary);
+  background: rgba(88, 101, 242, 0.1);
+  padding: 1px 4px;
+  border-radius: 2px;
 }}
 
-@keyframes timelineFadeIn {{
-  from {{ opacity: 0; transform: translateY(8px); }}
-  to {{ opacity: 1; transform: translateY(0); }}
+/* Redesigned Hero Control Center Layout */
+.hero-card {{
+  background: #FFFFFF !important;
+  border: var(--border-thick) !important;
+  border-radius: 20px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  box-shadow: var(--shadow-offset) !important;
+  margin-bottom: 24px !important;
 }}
-.animate-timeline-item {{
-  opacity: 0;
-  animation: timelineFadeIn 0.3s ease-out forwards;
+.hero-container {{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
 }}
+.hero-identity-sidebar {{
+  flex: 1;
+  min-width: 320px;
+  background: var(--color-bg-light);
+  border-right: var(--border-thick);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}}
+.hero-analytics-console {{
+  flex: 1.8;
+  min-width: 420px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background: #FFFFFF;
+}}
+
+/* Sidebar Elements */
+.sidebar-profile-header {{
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}}
+.sidebar-profile-info {{
+  display: flex;
+  flex-direction: column;
+}}
+.sidebar-student-name {{
+  font-family: var(--font-family-display);
+  font-size: 1.35rem;
+  font-weight: var(--font-weight-display);
+  color: #111111;
+  line-height: 1.1;
+}}
+.sidebar-dept {{
+  font-family: var(--font-family-body);
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray);
+  margin-top: 2px;
+}}
+.sidebar-sem {{
+  font-family: monospace;
+  font-size: 0.68rem;
+  color: #333333;
+}}
+.sidebar-divider {{
+  border-top: 1.5px dashed rgba(0,0,0,0.1);
+  margin: 4px 0;
+}}
+.pills-deck-title,
+.agenda-deck-title,
+.summary-title {{
+  font-family: var(--font-family-display);
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray);
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 8px;
+}}
+.sidebar-pills-grid {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}}
+.sidebar-tag {{
+  font-family: var(--font-family-body);
+  font-size: 0.62rem;
+  font-weight: var(--font-weight-bold);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: var(--border-thin);
+  text-transform: uppercase;
+}}
+.sidebar-tag.success {{
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--color-success);
+}}
+.sidebar-tag.info {{
+  background: rgba(88, 101, 242, 0.15);
+  color: var(--color-primary);
+}}
+.sidebar-tag.warning {{
+  background: rgba(255, 214, 0, 0.15);
+  color: #B45309;
+}}
+.sidebar-ai-summary p {{
+  font-family: var(--font-family-body);
+  font-size: 0.78rem;
+  color: #333333;
+  margin: 0;
+  line-height: 1.4;
+}}
+
+/* Agenda items */
+.agenda-deck {{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}}
+.agenda-item {{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #FFFFFF;
+  border: var(--border-thin);
+  border-radius: 8px;
+  padding: 8px 12px;
+}}
+.agenda-meta {{
+  display: flex;
+  flex-direction: column;
+}}
+.agenda-time {{
+  font-family: monospace;
+  font-size: 0.7rem;
+  color: var(--color-gray);
+}}
+.agenda-subject {{
+  font-family: var(--font-family-display);
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-bold);
+  color: #111111;
+}}
+.agenda-status {{
+  font-family: var(--font-family-display);
+  font-size: 0.58rem;
+  font-weight: var(--font-weight-bold);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: var(--border-thin);
+}}
+.agenda-status.present {{
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--color-success);
+}}
+.agenda-status.upcoming {{
+  background: rgba(88, 101, 242, 0.15);
+  color: var(--color-primary);
+}}
+
+/* Analytics Console Elements */
+.console-top-row {{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}}
+.console-main-kpi-block {{
+  display: flex;
+  flex-direction: column;
+}}
+.console-label-uppercase {{
+  font-family: var(--font-family-display);
+  font-size: 0.68rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray);
+  letter-spacing: 0.08em;
+}}
+.console-large-val-shimmer {{
+  font-family: var(--font-family-display);
+  font-size: 3.5rem;
+  font-weight: var(--font-weight-display);
+  line-height: 1.0;
+  margin: 6px 0;
+  letter-spacing: -0.04em;
+}}
+.console-comparison-chip {{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-family-display);
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-bold);
+  border: var(--border-thin);
+  border-radius: 20px;
+  padding: 2px 10px;
+  width: fit-content;
+}}
+.console-comparison-chip.safe {{
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--color-success);
+}}
+.console-comparison-chip.warning {{
+  background: rgba(255, 214, 0, 0.15);
+  color: #B45309;
+}}
+.console-comparison-chip.critical {{
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-danger);
+}}
+.status-pulse-dot {{
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}}
+.status-pulse-dot.safe {{
+  background: var(--color-success);
+  box-shadow: 0 0 6px var(--color-success);
+}}
+.status-pulse-dot.warning {{
+  background: #B45309;
+  box-shadow: 0 0 6px #B45309;
+}}
+.status-pulse-dot.critical {{
+  background: var(--color-danger);
+  box-shadow: 0 0 6px var(--color-danger);
+}}
+
+/* Circular Progress Ring */
+.console-circular-gauge {{
+  position: relative;
+  width: 80px;
+  height: 80px;
+}}
+.circular-chart {{
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+}}
+.circle-bg {{
+  fill: none;
+  stroke: var(--color-bg-light);
+  stroke-width: 3.8;
+}}
+.circle {{
+  fill: none;
+  stroke-width: 3.8;
+  stroke-linecap: round;
+  animation: progress 1s ease-out forwards;
+}}
+.circular-chart.safe .circle {{ stroke: var(--color-success); }}
+.circular-chart.warning .circle {{ stroke: var(--color-warning); }}
+.circular-chart.critical .circle {{ stroke: var(--color-danger); }}
+
+.gauge-percentage-overlay {{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-family-display);
+  font-size: 0.9rem;
+  font-weight: var(--font-weight-display);
+  color: #111111;
+}}
+
+/* Console Warning Banner */
+.console-alert-banner {{
+  border: var(--border-thin);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-family: var(--font-family-body);
+  font-size: 0.8rem;
+  color: #111111;
+  box-shadow: 2px 2px 0 #111111;
+}}
+.console-alert-banner.safe {{
+  background: rgba(34, 197, 94, 0.08);
+  border-color: var(--color-success);
+}}
+.console-alert-banner.warning {{
+  background: rgba(255, 214, 0, 0.08);
+  border-color: #B45309;
+}}
+.console-alert-banner.critical {{
+  background: rgba(239, 68, 68, 0.08);
+  border-color: var(--color-danger);
+}}
+
+/* Metrics Row */
+.console-metrics-row {{
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}}
+.console-sub-metric {{
+  background: var(--color-bg-light);
+  border: var(--border-thin);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+}}
+.metric-lbl {{
+  font-family: var(--font-family-body);
+  font-size: 0.58rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray);
+  letter-spacing: 0.03em;
+}}
+.metric-val {{
+  font-family: var(--font-family-display);
+  font-size: 1.1rem;
+  font-weight: var(--font-weight-display);
+  color: #111111;
+  margin-top: 2px;
+}}
+.metric-desc {{
+  font-family: var(--font-family-body);
+  font-size: 0.62rem;
+  color: var(--color-gray);
+  margin-top: 1px;
+}}
+.console-divider {{
+  border-top: var(--border-thin);
+  margin: 4px 0;
+}}
+
+/* Sparkline Trend Chart Overlay */
+.console-trend-chart-deck {{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}}
+.trend-chart-header {{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}}
+.trend-direction-badge {{
+  font-family: var(--font-family-display);
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+}}
+.trend-direction-badge.safe {{ color: var(--color-success); }}
+.trend-direction-badge.warning {{ color: #B45309; }}
+.trend-direction-badge.critical {{ color: var(--color-danger); }}
+
+.sparkline-container-card {{
+  height: 48px;
+  border: var(--border-thin);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--color-bg-light);
+  padding: 4px;
+}}
+.sparkline-graphic-svg {{
+  width: 100%;
+  height: 100%;
+}}
+.sparkline-line {{
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 2.2;
+}}
+.sparkline-area {{
+  stroke: none;
+}}
+
+/* Redesigned Analytics Console & Gauges */
+.overall-progress-chart-card {{
+  background: var(--color-bg-light);
+  border: var(--border-thin);
+  border-radius: 12px;
+  padding: 20px;
+}}
+.gauge-grid-container {{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 24px;
+}}
+.gauge-visual-box {{
+  position: relative;
+  width: 140px;
+  height: 140px;
+  flex-shrink: 0;
+}}
+.circular-chart-large {{
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+}}
+.circle-bg-large {{
+  fill: none;
+  stroke: rgba(0, 0, 0, 0.05);
+  stroke-width: 3.2;
+}}
+.circle-large {{
+  fill: none;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.8s ease-in-out;
+}}
+.circular-chart-large.safe .circle-large {{ stroke: var(--color-success); }}
+.circular-chart-large.warning .circle-large {{ stroke: var(--color-warning); }}
+.circular-chart-large.critical .circle-large {{ stroke: var(--color-danger); }}
+
+.gauge-large-overlay {{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}}
+.gauge-large-val {{
+  font-family: var(--font-family-display);
+  font-size: 1.8rem;
+  font-weight: var(--font-weight-display);
+  color: #111111;
+  line-height: 1.0;
+}}
+.gauge-large-lbl {{
+  font-family: var(--font-family-body);
+  font-size: 0.58rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray);
+  margin-top: 2px;
+}}
+.gauge-breakdown-details {{
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}}
+.breakdown-metric-item {{
+  display: flex;
+  flex-direction: column;
+}}
+.breakdown-lbl {{
+  font-family: var(--font-family-body);
+  font-size: 0.58rem;
+  color: var(--color-gray);
+  letter-spacing: 0.03em;
+}}
+.breakdown-val {{
+  font-family: var(--font-family-display);
+  font-size: 0.95rem;
+  font-weight: var(--font-weight-bold);
+  color: #111111;
+  margin-top: 2px;
+}}
+.breakdown-val.val-safe {{ color: var(--color-success); }}
+.breakdown-val.val-warning {{ color: #B45309; }}
+.breakdown-val.val-critical {{ color: var(--color-danger); }}
 
 /* Empty State Cards */
 .empty-state-container {{
@@ -1055,348 +3014,30 @@ div[data-testid="stButton"] button[key^="action_"] {{
 .empty-state-title {{
   font-size: 15px;
   font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 4px;
-}}
-.empty-state-subtitle {{
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin: 0;
 }}
 </style>
-
-<div class="student-dashboard-root animate-fade-in" id="student-dashboard-root">
-  
-  <!-- SECTION 1: HERO CARD -->
-  <div class="hero-card">
-    <div class="hero-container">
-      <div class="hero-left">
-        <span class="hero-greeting">{greeting}</span>
-        <span class="hero-student-name">{name}</span>
-        <p class="hero-motivation">{motivation_msg}</p>
-        <div class="hero-meta-row">
-          <span class="hero-date">📅 {today_str}</span>
-          <span class="hero-meta-divider">|</span>
-          <span class="hero-trend">📈 Trend: {trend_str}</span>
-          <span class="hero-meta-divider">|</span>
-          <span class="hero-semester">Semester: Spring 2026</span>
-        </div>
-      </div>
-      <div class="hero-right">
-        <div class="circular-progress-container">
-          <svg class="progress-ring" width="120" height="120">
-            <circle class="progress-ring-track" cx="60" cy="60" r="50" stroke="rgba(255, 255, 255, 0.2)" stroke-width="8" fill="transparent" />
-            <circle class="progress-ring-fill" id="hero-progress-ring-fill" cx="60" cy="60" r="50" stroke="#FFFFFF" stroke-width="8" fill="transparent"
-                    stroke-dasharray="314.159" stroke-dashoffset="314.159" stroke-linecap="round" />
-          </svg>
-          <div class="progress-text-container">
-            <span class="progress-pct-value" id="hero-pct-counter" data-target="{pct_all}">0%</span>
-          </div>
-        </div>
-        <span class="status-badge-hero {status_class}">{status_label}</span>
-      </div>
-    </div>
-  </div>
-
-</div>
 """, unsafe_allow_html=True)
 
-    # SECTION 2: QUICK ACTIONS
-    q1, q2, q3, q4 = st.columns(4, gap="medium")
-    with q1:
-        st.markdown("""
-        <a href="#subject-performance" target="_self" style="text-decoration: none;">
-          <div class="action-card">
-            <div class="action-icon">📋</div>
-            <div class="action-title">View Attendance</div>
-            <div class="action-sub">Check your subject-wise logs</div>
-          </div>
-        </a>
-        """, unsafe_allow_html=True)
-    with q2:
-        st.markdown("""
-        <a href="#attendance-analytics" target="_self" style="text-decoration: none;">
-          <div class="action-card">
-            <div class="action-icon">📈</div>
-            <div class="action-title">Attendance Analytics</div>
-            <div class="action-sub">Analyze semester charts</div>
-          </div>
-        </a>
-        """, unsafe_allow_html=True)
-    with q3:
-        st.markdown("""
-        <a href="#subject-performance" target="_self" style="text-decoration: none;">
-          <div class="action-card">
-            <div class="action-icon">📚</div>
-            <div class="action-title">View Subjects</div>
-            <div class="action-sub">View all enrolled courses</div>
-          </div>
-        </a>
-        """, unsafe_allow_html=True)
-    with q4:
-        # Prepare CSV data for download
-        import pandas as pd
-        report_rows = []
-        for log in logs:
-            sid = log.get("subject_id")
-            sinfo = subjects_map.get(sid, {})
-            sname = sinfo.get("name", "Unknown")
-            scode = sinfo.get("subject_code", "N/A")
-            sec_lbl = sinfo.get("section", "N/A")
-            present = "Present" if log.get("is_present") else "Absent"
-            ts = log.get("timestamp", "")
-            report_rows.append({
-                "Subject": sname,
-                "Code": scode,
-                "Section": sec_lbl,
-                "Status": present,
-                "Timestamp": ts
-            })
-        df_report = pd.DataFrame(report_rows)
-        csv_data = df_report.to_csv(index=False).encode('utf-8')
+    # SECTION 1: HERO CARD
+    render_student_command_center(metrics)
 
-        st.download_button(
-            label="📥 Download CSV Report",
-            data=csv_data,
-            file_name=f"Attendance_Report_{name}.csv",
-            mime="text/csv",
-            use_container_width=True,
-            key="action_download"
-        )
+    # SECTION 2: AI COACH & QUICK ACTIONS WORKSPACE
+    col_coach, col_actions = st.columns([1.3, 1.7], gap="medium")
+    with col_coach:
+        render_ai_workspace(metrics)
+    with col_actions:
+        render_quick_actions(metrics, logs, subjects_map, name)
 
     st.markdown('<div style="height:12px"></div>', unsafe_allow_html=True)
 
-    # SECTION 3: KPI METRICS GRID
-    k1, k2, k3, k4 = st.columns(4, gap="medium")
-    with k1:
-        st.markdown(f"""
-        <div class="kpi-card">
-          <div class="kpi-icon-container">📚</div>
-          <div class="kpi-value" id="kpi-subjects-counter" data-target="{len(subjects)}">0</div>
-          <div class="kpi-label">Subjects Enrolled</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with k2:
-        st.markdown(f"""
-        <div class="kpi-card">
-          <div class="kpi-icon-container">📅</div>
-          <div class="kpi-value" id="kpi-total-counter" data-target="{total_all}">0</div>
-          <div class="kpi-label">Total Classes</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with k3:
-        st.markdown(f"""
-        <div class="kpi-card">
-          <div class="kpi-icon-container">✅</div>
-          <div class="kpi-value" id="kpi-attended-counter" data-target="{attended_all}">0</div>
-          <div class="kpi-label">Classes Attended</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with k4:
-        st.markdown(f"""
-        <div class="kpi-card">
-          <div class="kpi-icon-container">📊</div>
-          <div class="kpi-value" id="kpi-pct-counter" data-target="{pct_all}" style="color: {trend_color};">0%</div>
-          <div class="kpi-label">Overall Attendance</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown('<div style="height:12px"></div>', unsafe_allow_html=True)
-
-    # SECTION 4: ATTENDANCE ANALYTICS (HTML/CSS Bar Chart)
-    chart_html = _render_html_bar_chart(stats_map, subjects_map, pct_all)
-    st.markdown(chart_html, unsafe_allow_html=True)
-
-    # SECTION 5: ATTENDANCE INSIGHTS
-    if total_all > 0:
-        classes_can_miss = max(0, math.floor(attended_all / 0.75 - total_all)) if pct_all >= 75 else 0
-        classes_to_85 = max(0, math.ceil((0.85 * total_all - attended_all) / 0.15))
-    else:
-        classes_can_miss = 0
-        classes_to_85 = 0
-
-    st.markdown(f"""
-    <div class="kpi-card" style="margin-bottom: 24px;" id="attendance-insights">
-      <h3 style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin: 0 0 16px 0;">Attendance Insights</h3>
-      <div class="insights-grid">
-        <div class="insight-tile hover-lift">
-          <div class="insight-header">
-            <span class="insight-icon" style="color: {trend_color};">📊</span>
-            <span class="insight-label">Overall Attendance</span>
-          </div>
-          <div class="insight-val" style="color: {trend_color};">{pct_all:.1f}%</div>
-          <div class="insight-desc">Calculated across all registered subjects.</div>
-        </div>
-        <div class="insight-tile hover-lift">
-          <div class="insight-header">
-            <span class="insight-icon" style="color: #6366F1;">🛡️</span>
-            <span class="insight-label">Classes You Can Miss</span>
-          </div>
-          <div class="insight-val" style="color: var(--text-primary);">{classes_can_miss}</div>
-          <div class="insight-desc">Without dropping below the 75% requirement.</div>
-        </div>
-        <div class="insight-tile hover-lift">
-          <div class="insight-header">
-            <span class="insight-icon" style="color: #6366F1;">🎯</span>
-            <span class="insight-label">Classes Needed for 85%</span>
-          </div>
-          <div class="insight-val" style="color: var(--text-primary);">{classes_to_85}</div>
-          <div class="insight-desc">Required to enter the safe zone.</div>
-        </div>
-        <div class="insight-tile hover-lift">
-          <div class="insight-header">
-            <span class="insight-icon" style="color: {trend_color};">{trend_arrow}</span>
-            <span class="insight-label">Attendance Momentum</span>
-          </div>
-          <div class="insight-val" style="color: {trend_color};">{trend_str}</div>
-          <div class="insight-desc">Compared to your past attendance rate.</div>
-        </div>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # SECTION 3 & 4: ANALYTICS WORKSPACE
+    render_analytics_workspace(metrics)
 
     # SECTION 6: SUBJECT PERFORMANCE GRID
-    st.markdown("""
-    <div id="subject-performance" style="margin-bottom: 12px;">
-      <h3 style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin: 0;">Subject Performance</h3>
-      <p style="font-size: 13px; color: var(--text-secondary); margin: 2px 0 16px 0;">Your registered subjects and performance status</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    if not subjects:
-        st.markdown("""
-        <div class="empty-state-container">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="empty-state-svg">
-            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path>
-            <path d="M6 6h10"></path>
-            <path d="M6 10h10"></path>
-            <path d="M12 14h2"></path>
-            <circle cx="12" cy="14" r="3" fill="#EEF2FF" stroke="var(--primary-color)"></circle>
-            <line x1="12" y1="12" x2="12" y2="16"></line>
-            <line x1="10" y1="14" x2="14" y2="14"></line>
-          </svg>
-          <h4 class="empty-state-title">No subjects yet</h4>
-          <p class="empty-state-subtitle">Your subjects will appear here once enrolled. Click "＋ Enroll" to get started.</p>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        chunk_size = 3
-        for chunk_idx in range(0, len(subjects), chunk_size):
-            chunk = subjects[chunk_idx : chunk_idx + chunk_size]
-            cols = st.columns(3, gap="medium")
-            for i, sn in enumerate(chunk):
-                with cols[i]:
-                    sub  = sn.get("subjects", {})
-                    sid  = sub.get("subject_id")
-                    stat = stats_map.get(sid, {"total": 0, "attended": 0})
-                    att  = stat["attended"]
-                    tot  = stat["total"]
-                    pct  = int(att / tot * 100) if tot > 0 else 0
-                    
-                    teacher_name = teachers_map.get(sub.get("teacher_id"), "Professor N/A")
-                    
-                    if pct >= 85:
-                        card_class = "safe"
-                        card_status = "Safe"
-                    elif pct >= 75:
-                        card_class = "warning"
-                        card_status = "Warning"
-                    else:
-                        card_class = "critical"
-                        card_status = "Critical"
-                        
-                    st.markdown(f"""
-                    <div class="subject-card {card_class}">
-                      <div class="subject-header">
-                        <span class="subject-title">{sub.get("name", "—")}</span>
-                        <span class="status-badge-small {card_class}">{card_status}</span>
-                      </div>
-                      <div class="subject-body">
-                        <div class="subject-meta">👤 {teacher_name}</div>
-                        <div class="subject-meta">Section: {sub.get("section", "—")} · Code: {sub.get("subject_code", "—")}</div>
-                        <div class="card-divider"></div>
-                        <div class="progress-label-row">
-                          <span class="label">Attendance</span>
-                          <span class="pct-val {card_class}">{pct}%</span>
-                        </div>
-                        <div class="progress-bar-track">
-                          <div class="progress-bar-fill {card_class}" style="width: {pct}%; --target-width: {pct}%;"></div>
-                        </div>
-                        
-                        <div class="subject-footer-stats">
-                          <div class="footer-stat-col">
-                            <span class="stat-num">{tot}</span>
-                            <span class="stat-lbl">Total</span>
-                          </div>
-                          <div class="footer-stat-col">
-                            <span class="stat-num">{att}</span>
-                            <span class="stat-lbl">Attended</span>
-                          </div>
-                          <div class="footer-stat-col">
-                            <span class="stat-num {'text-red' if (tot - att) > 0.15*tot else ''}">{tot - att}</span>
-                            <span class="stat-lbl">Missed</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    if st.button("Unenroll", type="tertiary", use_container_width=True, icon=":material/delete_forever:", key=f"unenroll_{sid}"):
-                        unenroll_student_to_subject(student_id, sid)
-                        st.toast(f"Unenrolled from {sub.get('name','')}")
-                        st.rerun()
+    render_subject_grid(metrics, student_id)
 
     # SECTION 7: RECENT ACTIVITY TIMELINE
-    recent = sorted(logs, key=lambda x: x.get("timestamp", ""), reverse=True)[:10]
-    
-    timeline_items = ""
-    for idx, log in enumerate(recent):
-        present = log.get("is_present", False)
-        ts_raw = log.get("timestamp", "")
-        try:
-            ts = datetime.fromisoformat(ts_raw).strftime("%d %b %Y · %I:%M %p")
-        except Exception:
-            ts = ts_raw[:16] if ts_raw else "—"
-            
-        sid = log.get("subject_id")
-        sinfo = subjects_map.get(sid, {})
-        sname = sinfo.get("name", "Unknown")
-        scode = sinfo.get("subject_code", "N/A")
-        
-        if present:
-            status_class = "present"
-            status_label = "Present"
-            sym = "✓"
-        else:
-            status_class = "absent"
-            status_label = "Absent"
-            sym = "✗"
-            
-        delay = idx * 50
-        timeline_items += f"""
-        <div class="timeline-row animate-timeline-item" style="animation-delay: {delay}ms;">
-          <div class="timeline-left">
-            <div class="timeline-dot {status_class}">{sym}</div>
-            <div class="timeline-line"></div>
-          </div>
-          <div class="timeline-content">
-            <div class="timeline-title-row">
-              <span class="timeline-subject">{sname}</span>
-              <span class="status-pill {status_class}">{status_label}</span>
-            </div>
-            <div class="timeline-meta">Code: {scode} · {ts}</div>
-          </div>
-        </div>
-        """
-
-    st.markdown(f"""
-    <div class="kpi-card" style="margin-top: 10px; margin-bottom: 24px;">
-      <h3 style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin: 0 0 16px 0;">Recent Activity Timeline</h3>
-      <div class="timeline-container">
-        {timeline_items if timeline_items else '<div class="empty-timeline">📅<br><b>No recent activity</b><br><span style="font-size:12px; color:var(--text-secondary);">Your attendance history is currently empty.</span></div>'}
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+    render_activity_timeline(metrics)
 
     # SECTION 8: FOOTER SUMMARY
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -1461,13 +3102,13 @@ div[data-testid="stButton"] button[key^="action_"] {{
       animateValue("kpi-attended-counter", 1000);
       animateValue("kpi-pct-counter", 1000);
 
-      // SVG circular progress fill animation
+      // SVG circular progress fill animation (Phase 1 - removed as we use high-density key values layout)
       const fillCircle = document.getElementById("hero-progress-ring-fill");
       if (fillCircle) {
         const pctObj = document.getElementById("hero-pct-counter");
         if (pctObj) {
           const targetPct = parseFloat(pctObj.getAttribute("data-target")) || 0;
-          const targetOffset = 314.159 * (1 - targetPct / 100);
+          const targetOffset = 251.327 * (1 - targetPct / 100);
           fillCircle.style.strokeDashoffset = targetOffset;
         }
       }

@@ -1,29 +1,30 @@
-"""SmartAttend — Footer components."""
+"""SmartAttend — Footer components redesigned in Neo-Brutalism."""
 import streamlit as st
 
 
 def footer_home():
     st.markdown("""
 <style>
-.sa-footer{border-top:1px solid #E5E7EB;padding:3rem 0 1.75rem;margin-top:5rem;}
+.sa-footer{border-top:3px solid #000000;padding:3rem 0 1.75rem;margin-top:5rem;}
 .sa-footer-grid{display:flex;justify-content:space-between;flex-wrap:wrap;
   gap:2.5rem;margin-bottom:2.5rem;}
-.sa-footer-brand .name{font-family:'Inter',sans-serif;font-size:1rem;font-weight:800;
-  color:#111827;letter-spacing:-0.03em;display:block;margin-bottom:8px;}
-.sa-footer-brand p{font-size:0.8rem;color:#6B7280;max-width:240px;
-  line-height:1.55;font-family:'Inter',sans-serif;margin:0;}
-.sa-footer-col h5{font-size:0.72rem;font-weight:700;text-transform:uppercase;
-  letter-spacing:0.09em;color:#374151;margin-bottom:14px;
-  font-family:'Inter',sans-serif;}
-.sa-footer-col a{display:block;font-size:0.82rem;color:#6B7280;
-  text-decoration:none;margin-bottom:9px;font-family:'Inter',sans-serif;
-  transition:color 0.15s;}
-.sa-footer-col a:hover{color:#4F46E5;}
+.sa-footer-brand .name{font-family:'Outfit',sans-serif;font-size:1.25rem;font-weight:900;
+  color:#000000;letter-spacing:-0.03em;display:block;margin-bottom:8px;text-transform:uppercase;}
+.sa-footer-brand p{font-size:0.9rem;color:#333333;max-width:240px;
+  line-height:1.55;font-family:'Outfit',sans-serif;margin:0;font-weight:600;}
+.sa-footer-col h5{font-size:0.85rem;font-weight:800;text-transform:uppercase;
+  letter-spacing:0.06em;color:#000000;margin-bottom:14px;
+  font-family:'Outfit',sans-serif;}
+.sa-footer-col a{display:block;font-size:0.9rem;color:#333333;
+  text-decoration:none;margin-bottom:9px;font-family:'Outfit',sans-serif;
+  transition:color 0.15s;font-weight:600;}
+.sa-footer-col a:hover{color:#5865F2;text-decoration:underline;}
 .sa-footer-bottom{display:flex;justify-content:space-between;align-items:center;
-  border-top:1px solid #F3F4F6;padding-top:1.25rem;flex-wrap:wrap;gap:0.5rem;}
-.sa-footer-bottom span{font-size:0.78rem;color:#9CA3AF;font-family:'Inter',sans-serif;}
-.sa-badge{background:#EEF2FF;color:#4F46E5;padding:3px 11px;
-  border-radius:100px;font-size:0.7rem;font-weight:700;letter-spacing:0.03em;}
+  border-top:2px solid #000000;padding-top:1.25rem;flex-wrap:wrap;gap:0.5rem;}
+.sa-footer-bottom span{font-size:0.85rem;color:#000000;font-family:'Outfit',sans-serif;font-weight:700;}
+.sa-badge{background:#FFD600;color:#000000;padding:4px 12px;
+  border:2px solid #000000;border-radius:4px;font-size:0.8rem;font-weight:800;
+  letter-spacing:0.03em;box-shadow: 2px 2px 0 #000;}
 </style>
 <div class="sa-footer">
   <div class="sa-footer-grid">
@@ -61,12 +62,12 @@ def footer_home():
 
 def footer_dashboard():
     st.markdown("""
-<div style="margin-top:3rem;padding-top:1.25rem;border-top:1px solid #E5E7EB;
+<div style="margin-top:3rem;padding-top:1.25rem;border-top:3px solid #000000;
      display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
-  <span style="font-size:0.75rem;color:#9CA3AF;font-family:'Inter',sans-serif;">
+  <span style="font-size:0.85rem;color:#000000;font-family:'Outfit',sans-serif;font-weight:700;">
     &copy; 2024 SmartAttend &mdash; AI-Powered Attendance
   </span>
-  <span style="font-size:0.75rem;color:#9CA3AF;font-family:'Inter',sans-serif;">
+  <span style="font-size:0.85rem;color:#000000;font-family:'Outfit',sans-serif;font-weight:700;">
     Built for Colleges &amp; Universities
   </span>
 </div>

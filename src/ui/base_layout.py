@@ -1,39 +1,17 @@
 """
 SmartAttend — Global Design System
-New token set as per spec:
-  Primary  #5B5FF8   Dark  #0F172A   Success  #22C55E   Background  #F8FAFC
+Updated to Neo-Brutalism styling system.
 """
 import streamlit as st
 
 # ── Design tokens ─────────────────────────────────────────────────────────────
-P      = "#5B5FF8"   # primary
-P_HVR  = "#4A4EE0"   # primary hover (5% darker)
-P_LITE = "#EEEFFF"   # primary tint
-P_MID  = "#C7C9FD"   # primary mid
-SEC    = "#7C3AED"   # secondary violet
-ACC    = "#06B6D4"   # accent cyan
-OK     = "#22C55E"   # success
-WARN   = "#F59E0B"   # warning
-ERR    = "#EF4444"   # error
-
-G50  = "#F8FAFC"     # app background
-G100 = "#F1F5F9"
-G200 = "#E2E8F0"
-G300 = "#CBD5E1"
-G400 = "#94A3B8"
-G500 = "#64748B"
-G600 = "#475569"
-G700 = "#334155"
-G800 = "#1E293B"
-G900 = "#0F172A"     # dark base
-WHT  = "#FFFFFF"
-
-D_BG      = "#0B0B14"
-D_SURFACE = "#131325"
-D_BORDER  = "#202040"
-D_TEXT    = "#E2E8F0"
-D_MUTED   = "#94A3B8"
-D_INPUT   = "#18182E"
+P      = "#5865F2"   # Primary Indigo
+P_HVR  = "#4752C4"   # Primary Hover
+SEC    = "#EB459E"   # Secondary Pink
+ACC    = "#000000"   # Structural Black
+OK     = "#22C55E"   # Success
+WARN   = "#F59E0B"   # Warning
+ERR    = "#EF4444"   # Error
 
 
 def _dark() -> bool:
@@ -50,187 +28,322 @@ def render_theme_toggle(key: str = "theme_toggle"):
 
 
 def style_background_home():
-    st.markdown(f"<style>.stApp{{background:{G50}!important;}}</style>",
+    st.markdown("<style>.stApp{background:#FAFAFA!important;}</style>",
                 unsafe_allow_html=True)
 
 
 def style_background_dashboard():
-    bg = D_BG if _dark() else G50
+    bg = "#1A1A1A" if _dark() else "#FAFAFA"
     st.markdown(f"<style>.stApp{{background:{bg}!important;}}</style>",
                 unsafe_allow_html=True)
 
 
 def style_base_layout():
-    d      = _dark()
-    bg     = D_BG      if d else G50
-    surf   = D_SURFACE if d else WHT
-    brd    = D_BORDER  if d else G200
-    tx     = D_TEXT    if d else G900
-    muted  = D_MUTED   if d else G500
-    inp_bg = D_INPUT   if d else WHT
+    d = _dark()
+    bg           = "#1A1A1A" if d else "#FAFAFA"
+    surf         = "#242424" if d else "#FFFFFF"
+    brd          = "#FFFFFF" if d else "#000000"
+    tx           = "#FFFFFF" if d else "#000000"
+    muted        = "#CCCCCC" if d else "#333333"
+    inp_bg       = "#2A2A2A" if d else "#FFFFFF"
+    shadow_color = "#FFFFFF" if d else "#000000"
 
     st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Climate+Crisis&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
-*,*::before,*::after{{box-sizing:border-box;}}
-html,body,[class*="css"]{{
-  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif!important;
-  -webkit-font-smoothing:antialiased;
+*, *::before, *::after {{
+  box-sizing: border-box;
+}}
+
+html, body, [class*="css"] {{
+  font-family: 'Outfit', sans-serif !important;
+  -webkit-font-smoothing: antialiased;
 }}
 
 /* ── Streamlit chrome ── */
-#MainMenu,footer,header{{visibility:hidden!important;height:0!important;}}
-.stDeployButton{{display:none!important;}}
-[data-testid="stToolbar"]{{display:none!important;}}
+#MainMenu, footer, header {{
+  visibility: hidden !important;
+  height: 0 !important;
+}}
+.stDeployButton {{
+  display: none !important;
+}}
+[data-testid="stToolbar"] {{
+  display: none !important;
+}}
 
 /* ── App shell ── */
-.stApp{{background:{bg}!important;color:{tx}!important;}}
+.stApp {{
+  background: {bg} !important;
+  color: {tx} !important;
+}}
 
 /* ── Container ── */
-.block-container{{
-  padding:1.25rem 2.5rem 4rem!important;
-  max-width:1340px!important;
-  margin:0 auto!important;
+.block-container {{
+  padding: 1.25rem 2.5rem 4rem !important;
+  max-width: 1340px !important;
+  margin: 0 auto !important;
 }}
-@media(max-width:900px){{.block-container{{padding:1rem 1.25rem 3rem!important;}}}}
-@media(max-width:600px){{.block-container{{padding:0.75rem 0.875rem 2.5rem!important;}}}}
+@media (max-width: 900px) {{
+  .block-container {{
+    padding: 1rem 1.25rem 3rem !important;
+  }}
+}}
+@media (max-width: 600px) {{
+  .block-container {{
+    padding: 0.75rem 0.875rem 2.5rem !important;
+  }}
+}}
 
 /* ── Typography ── */
-h1{{font-family:'Inter',sans-serif!important;font-size:2.25rem!important;
-    font-weight:900!important;letter-spacing:-0.045em!important;
-    line-height:1.1!important;color:{tx}!important;margin-bottom:0!important;}}
-h2{{font-family:'Inter',sans-serif!important;font-size:1.35rem!important;
-    font-weight:700!important;letter-spacing:-0.025em!important;
-    color:{tx}!important;margin-bottom:0!important;}}
-h3{{font-family:'Inter',sans-serif!important;font-size:1.05rem!important;
-    font-weight:600!important;color:{tx}!important;margin-bottom:0!important;}}
-p,label,.stMarkdown p,.stText{{
-  font-family:'Inter',sans-serif!important;
-  color:{muted}!important;font-size:0.875rem!important;line-height:1.6!important;
+h1 {{
+  font-family: 'Climate Crisis', display, sans-serif !important;
+  font-size: 3.25rem !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.04em !important;
+  line-height: 1.0 !important;
+  color: {tx} !important;
+  margin-bottom: 0.75rem !important;
 }}
-label[data-baseweb]{{
-  font-family:'Inter',sans-serif!important;font-size:0.8rem!important;
-  font-weight:600!important;color:{tx}!important;letter-spacing:0.01em!important;
+h2 {{
+  font-family: 'Climate Crisis', display, sans-serif !important;
+  font-size: 1.85rem !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1.1 !important;
+  color: {tx} !important;
+  margin-bottom: 0.75rem !important;
+}}
+h3 {{
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 1.35rem !important;
+  font-weight: 800 !important;
+  color: {tx} !important;
+  margin-bottom: 0 !important;
+}}
+p, label, .stMarkdown p, .stText {{
+  font-family: 'Outfit', sans-serif !important;
+  color: {muted} !important;
+  font-size: 0.95rem !important;
+  line-height: 1.5 !important;
+}}
+label[data-baseweb] {{
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 0.95rem !important;
+  font-weight: 800 !important;
+  color: {tx} !important;
+  letter-spacing: 0.01em !important;
 }}
 
-/* ── Text inputs ── */
+/* ── Inputs (System) ── */
 .stTextInput>div>div>input,
-.stTextArea>div>div>textarea{{
-  background:{inp_bg}!important;border:1.5px solid {brd}!important;
-  border-radius:9px!important;color:{tx}!important;
-  font-family:'Inter',sans-serif!important;font-size:0.875rem!important;
-  padding:0.65rem 0.875rem!important;
-  transition:border-color 0.18s ease,box-shadow 0.18s ease!important;
+.stTextArea>div>div>textarea,
+.stSelectbox>div>div {{
+  height: 52px !important;
+  border: 3px solid {brd} !important;
+  border-radius: 6px !important;
+  background: {inp_bg} !important;
+  color: {tx} !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 0.95rem !important;
+  padding: 0.65rem 0.875rem !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }}
+
+.stTextArea>div>div>textarea {{
+  height: auto !important;
+  min-height: 120px !important;
+}}
+
 .stTextInput>div>div>input:focus,
-.stTextArea>div>div>textarea:focus{{
-  border-color:{P}!important;
-  box-shadow:0 0 0 3px rgba(91,95,248,0.13)!important;outline:none!important;
+.stTextArea>div>div>textarea:focus,
+.stSelectbox>div>div:focus-within {{
+  outline: none !important;
+  border-color: {P} !important;
+  box-shadow: 4px 4px 0 {shadow_color} !important;
 }}
 
-/* ── Selectbox ── */
-.stSelectbox>div>div{{
-  background:{inp_bg}!important;border:1.5px solid {brd}!important;
-  border-radius:9px!important;color:{tx}!important;
-  font-family:'Inter',sans-serif!important;font-size:0.875rem!important;
-}}
-[data-testid="stSelectbox"] label{{
-  font-size:0.8rem!important;font-weight:600!important;color:{tx}!important;
-}}
-
-/* ── Buttons — primary ── */
-button[kind="primaryFormSubmit"],
-button[kind="primary"]{{
-  background:{P}!important;color:#fff!important;border:none!important;
-  border-radius:9px!important;font-family:'Inter',sans-serif!important;
-  font-size:0.875rem!important;font-weight:600!important;
-  padding:0.575rem 1.375rem!important;cursor:pointer!important;
-  transition:background 0.18s,transform 0.15s,box-shadow 0.18s!important;
-  box-shadow:0 2px 8px rgba(91,95,248,0.3)!important;
-}}
-button[kind="primary"]:hover{{
-  background:{P_HVR}!important;transform:translateY(-1px)!important;
-  box-shadow:0 6px 18px rgba(91,95,248,0.38)!important;
-}}
-button[kind="primary"]:active{{transform:translateY(0)!important;}}
-
-/* ── Buttons — secondary ── */
-button[kind="secondary"]{{
-  background:{surf}!important;color:{tx}!important;
-  border:1.5px solid {brd}!important;border-radius:9px!important;
-  font-family:'Inter',sans-serif!important;font-size:0.875rem!important;
-  font-weight:500!important;padding:0.575rem 1.375rem!important;
-  transition:background 0.18s,border-color 0.18s,box-shadow 0.18s!important;
-}}
-button[kind="secondary"]:hover{{
-  background:{G100}!important;border-color:{G300}!important;
-  box-shadow:0 2px 8px rgba(0,0,0,0.06)!important;
+/* ── Button System ── */
+button[kind="primary"], button[kind="primaryFormSubmit"] {{
+  background: {P} !important;
+  color: #FFFFFF !important;
+  border: 3px solid {brd} !important;
+  border-radius: 6px !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 0.95rem !important;
+  padding: 0.65rem 1.5rem !important;
+  box-shadow: 4px 4px 0 {shadow_color} !important;
+  transition: transform 100ms ease, box-shadow 100ms ease !important;
+  cursor: pointer !important;
 }}
 
-/* ── Buttons — tertiary ── */
-button[kind="tertiary"]{{
-  background:transparent!important;color:{P}!important;border:none!important;
-  border-radius:9px!important;font-family:'Inter',sans-serif!important;
-  font-size:0.875rem!important;font-weight:500!important;
-  padding:0.5rem 1rem!important;transition:background 0.15s!important;
+button[kind="primary"]:hover, button[kind="primaryFormSubmit"]:hover {{
+  transform: translate(-2px, -2px) !important;
+  box-shadow: 6px 6px 0 {shadow_color} !important;
 }}
-button[kind="tertiary"]:hover{{background:rgba(91,95,248,0.07)!important;}}
+
+button[kind="primary"]:active, button[kind="primaryFormSubmit"]:active {{
+  transform: translate(4px, 4px) !important;
+  box-shadow: 0px 0px 0 {shadow_color} !important;
+}}
+
+button[kind="secondary"] {{
+  background: {SEC} !important;
+  color: #FFFFFF !important;
+  border: 3px solid {brd} !important;
+  border-radius: 6px !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 0.95rem !important;
+  padding: 0.65rem 1.5rem !important;
+  box-shadow: 4px 4px 0 {shadow_color} !important;
+  transition: transform 100ms ease, box-shadow 100ms ease !important;
+  cursor: pointer !important;
+}}
+
+button[kind="secondary"]:hover {{
+  transform: translate(-2px, -2px) !important;
+  box-shadow: 6px 6px 0 {shadow_color} !important;
+}}
+
+button[kind="secondary"]:active {{
+  transform: translate(4px, 4px) !important;
+  box-shadow: 0px 0px 0 {shadow_color} !important;
+}}
+
+button[kind="tertiary"] {{
+  background: {surf} !important;
+  color: {tx} !important;
+  border: 3px solid {brd} !important;
+  border-radius: 6px !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 0.95rem !important;
+  padding: 0.65rem 1.5rem !important;
+  box-shadow: 4px 4px 0 {shadow_color} !important;
+  transition: transform 100ms ease, box-shadow 100ms ease !important;
+  cursor: pointer !important;
+}}
+
+button[kind="tertiary"]:hover {{
+  transform: translate(-2px, -2px) !important;
+  box-shadow: 6px 6px 0 {shadow_color} !important;
+}}
+
+button[kind="tertiary"]:active {{
+  transform: translate(4px, 4px) !important;
+  box-shadow: 0px 0px 0 {shadow_color} !important;
+}}
+
+button:disabled, button[disabled], 
+button[kind="primary"]:disabled, button[kind="primaryFormSubmit"]:disabled,
+button[kind="secondary"]:disabled, button[kind="tertiary"]:disabled {{
+  background: #E2E8F0 !important;
+  color: #94A3B8 !important;
+  border: 3px solid {brd} !important;
+  box-shadow: 4px 4px 0 {shadow_color} !important;
+  transform: none !important;
+  cursor: not-allowed !important;
+  transition: none !important;
+}}
+
+button:disabled:hover, button[disabled]:hover {{
+  transform: none !important;
+  box-shadow: 4px 4px 0 {shadow_color} !important;
+}}
 
 /* ── Metrics ── */
-[data-testid="stMetric"]{{
-  background:{surf}!important;border:1px solid {brd}!important;
-  border-radius:14px!important;padding:1.25rem 1.5rem!important;
-  transition:box-shadow 0.2s!important;
+[data-testid="stMetric"] {{
+  background: {surf} !important;
+  border: 3px solid {brd} !important;
+  border-radius: 6px !important;
+  padding: 1.25rem 1.5rem !important;
+  box-shadow: 4px 4px 0 {shadow_color} !important;
 }}
-[data-testid="stMetric"]:hover{{box-shadow:0 4px 16px rgba(0,0,0,0.07)!important;}}
-[data-testid="stMetricLabel"]{{
-  font-size:0.7rem!important;font-weight:700!important;
-  text-transform:uppercase!important;letter-spacing:0.06em!important;
-  color:{muted}!important;
+[data-testid="stMetricLabel"] {{
+  font-size: 0.8rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: {tx} !important;
+  font-family: 'Outfit', sans-serif !important;
 }}
-[data-testid="stMetricValue"]{{
-  font-size:1.8rem!important;font-weight:900!important;
-  color:{tx}!important;letter-spacing:-0.04em!important;
+[data-testid="stMetricValue"] {{
+  font-size: 2.0rem !important;
+  font-weight: 900 !important;
+  color: {tx} !important;
+  letter-spacing: -0.04em !important;
+  font-family: 'Outfit', sans-serif !important;
 }}
-[data-testid="stMetricDelta"]{{font-size:0.78rem!important;}}
 
 /* ── Dividers ── */
-hr{{border:none!important;border-top:1px solid {brd}!important;margin:1.25rem 0!important;}}
-
-/* ── Dataframe ── */
-[data-testid="stDataFrame"]{{
-  border-radius:12px!important;border:1px solid {brd}!important;overflow:hidden!important;
+hr {{
+  border: none !important;
+  border-top: 3px solid {brd} !important;
+  margin: 1.25rem 0 !important;
 }}
 
-/* ── Alerts ── */
-[data-testid="stAlert"]{{border-radius:10px!important;font-family:'Inter',sans-serif!important;}}
-
-/* ── Spinner ── */
-.stSpinner>div{{border-top-color:{P}!important;}}
-
-/* ── Toast ── */
-[data-testid="stToast"]{{
-  border-radius:10px!important;font-family:'Inter',sans-serif!important;
-  font-size:0.875rem!important;
+/* ── Alerts & Toast ── */
+[data-testid="stAlert"] {{
+  border: 3px solid {brd} !important;
+  border-radius: 6px !important;
+  box-shadow: 4px 4px 0 {shadow_color} !important;
+  background: {surf} !important;
+  color: {tx} !important;
+  font-family: 'Outfit', sans-serif !important;
+}}
+[data-testid="stAlert"] > div {{
+  border: none !important;
+  background: transparent !important;
+}}
+[data-testid="stToast"] {{
+  border: 3px solid {brd} !important;
+  border-radius: 6px !important;
+  box-shadow: 4px 4px 0 {shadow_color} !important;
+  background: {surf} !important;
+  color: {tx} !important;
+  font-family: 'Outfit', sans-serif !important;
 }}
 
 /* ── Camera ── */
-[data-testid="stCameraInput"]{{border-radius:12px!important;overflow:hidden!important;}}
+[data-testid="stCameraInput"] {{
+  border: 3px solid {brd} !important;
+  border-radius: 6px !important;
+  box-shadow: 4px 4px 0 {shadow_color} !important;
+  overflow: hidden !important;
+}}
 
 /* ── Progress ── */
-.stProgress>div>div>div{{background:{P}!important;border-radius:100px!important;}}
+.stProgress>div>div {{
+  background: {surf} !important;
+  border: 2.5px solid {brd} !important;
+  border-radius: 4px !important;
+  height: 14px !important;
+}}
+.stProgress>div>div>div {{
+  background: {P} !important;
+  border-radius: 0px !important;
+  border-right: 2.5px solid {brd} !important;
+}}
 
 /* ── Bordered containers ── */
-[data-testid="stVerticalBlockBorderWrapper"]{{
-  border:1.5px solid {brd}!important;border-radius:14px!important;
-  background:{surf}!important;padding:1.25rem!important;
+[data-testid="stVerticalBlockBorderWrapper"] {{
+  border: 4px solid {brd} !important;
+  border-radius: 8px !important;
+  background: {surf} !important;
+  padding: 24px !important;
+  box-shadow: 6px 6px 0 {shadow_color} !important;
 }}
 
 /* ── Charts ── */
 [data-testid="stArrowVegaLiteChart"],
-[data-testid="stVegaLiteChart"]{{
-  border-radius:12px!important;overflow:hidden!important;
+[data-testid="stVegaLiteChart"] {{
+  border: 3px solid {brd} !important;
+  border-radius: 6px !important;
+  box-shadow: 4px 4px 0 {shadow_color} !important;
+  background: {surf} !important;
 }}
 </style>
 """, unsafe_allow_html=True)
