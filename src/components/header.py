@@ -30,9 +30,6 @@ def header_home():
 .sa-nav-left{{display:flex;align-items:center;gap:12px;}}
 .sa-nav-left .wordmark{{font-family:'Outfit',sans-serif;font-size:1.45rem;
   font-weight:900;color:#000000;letter-spacing:-0.04em;text-transform:uppercase;}}
-.sa-nav-beta{{font-size:0.75rem;font-weight:800;background:#FFD600;color:#000000;
-  padding:3px 10px;border:2px solid #000000;border-radius:4px;letter-spacing:0.04em;
-  text-transform:uppercase;box-shadow: 2px 2px 0 #000;}}
 .sa-nav-links{{display:flex;align-items:center;gap:2rem;}}
 .sa-nav-links a{{font-size:0.95rem;font-weight:800;color:#000000;
   text-decoration:none;transition:color 0.15s;font-family:'Outfit',sans-serif;}}
@@ -42,12 +39,11 @@ def header_home():
   <div class="sa-nav-left">
     {LOGO_SVG}
     <span class="wordmark">SmartAttend</span>
-    <span class="sa-nav-beta">Beta</span>
   </div>
   <div class="sa-nav-links">
-    <a href="#">Features</a>
-    <a href="#">How It Works</a>
-    <a href="#">About</a>
+    <a href="#features">Features</a>
+    <a href="#how-it-works">How It Works</a>
+    <a href="#about">About</a>
   </div>
 </div>
 """, unsafe_allow_html=True)

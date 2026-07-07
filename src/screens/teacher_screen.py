@@ -120,52 +120,32 @@ _TEACHER_CSS = """
   box-shadow: var(--shadow-offset-lg);
 }
 
-/* Streamlit quick actions styling */
-div[data-testid="stButton"] button[key^="action_"] {
+/* Premium Subjects Registry Card Override */
+.premium-nav-card div.stButton > button {
   background: #FFFFFF !important;
   border: var(--border-thick) !important;
-  border-radius: 16px !important;
+  border-radius: 12px !important;
   box-shadow: var(--shadow-offset) !important;
   color: #111111 !important;
-  transition: transform 0.2s, box-shadow 0.2s !important;
-  padding: 12px 16px !important;
   font-family: var(--font-family-display) !important;
-  font-size: 13px !important;
-  min-height: 80px !important;
-  text-align: left !important;
-  align-items: flex-start !important;
-  display: flex !important;
-  flex-direction: column !important;
+  font-weight: 800 !important;
+  padding: 12px 24px !important;
+  transition: transform 0.2s, box-shadow 0.2s !important;
+  width: 100% !important;
+  display: inline-flex !important;
+  align-items: center !important;
   justify-content: center !important;
-  line-height: 1.3 !important;
+  min-height: 52px !important;
 }
-div[data-testid="stButton"] button[key^="action_"]:hover {
-  transform: translateY(-4px) !important;
+.premium-nav-card div.stButton > button:hover {
+  transform: translateY(-2px) !important;
   box-shadow: var(--shadow-offset-lg) !important;
   border-color: var(--color-primary) !important;
+  background-color: #F8F9FA !important;
 }
-div[data-testid="stButton"] button[key^="action_"] p {
-  margin: 0 !important;
-  font-weight: 800 !important;
-}
-
-/* Tab button links */
-div[data-testid="stButton"] button[key^="tt_"] {
-  font-family: var(--font-family-display) !important;
-  font-weight: 800 !important;
-  font-size: 13px !important;
-  background: transparent !important;
-  border: none !important;
-  border-bottom: 2.5px solid transparent !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  padding: 8px 12px !important;
-  color: #64748B !important;
-  transition: all 0.2s ease !important;
-}
-div[data-testid="stButton"] button[key^="tt_"]:hover {
-  color: var(--color-primary) !important;
-  border-bottom-color: var(--color-primary) !important;
+.premium-nav-card div.stButton > button:active {
+  transform: translateY(0px) !important;
+  box-shadow: var(--shadow-offset) !important;
 }
 
 /* Timeline Cards */
@@ -189,13 +169,85 @@ div[data-testid="stButton"] button[key^="tt_"]:hover {
 .timeline-card-box:hover {
   transform: translateY(-2px);
 }
+
+/* Premium animations and overrides */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes drawPath {
+  to { stroke-dashoffset: 0; }
+}
+.sparkline-line {
+  stroke-dasharray: 600;
+  stroke-dashoffset: 600;
+  animation: drawPath 1.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes softPulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.status-pulse-dot {
+  animation: softPulse 2s infinite ease-in-out;
+}
+
+@keyframes countScale {
+  from { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
+  to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+.gauge-percentage-overlay {
+  animation: countScale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes drawProgress {
+  from { stroke-dashoffset: 100; }
+  to { stroke-dashoffset: var(--dashoffset, 0); }
+}
+.circle {
+  animation: drawProgress 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Premium Navigation Card Override */
+div[data-testid="stButton"] button[key="tt_manage_subjects"] {
+  background: #FFFFFF !important;
+  border: var(--border-thick) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-offset) !important;
+  color: #111111 !important;
+  font-family: var(--font-family-display) !important;
+  font-weight: 800 !important;
+  padding: 10px 20px !important;
+  transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s !important;
+}
+div[data-testid="stButton"] button[key="tt_manage_subjects"]:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: var(--shadow-offset-lg) !important;
+  background-color: #F8F9FA !important;
+  border-color: var(--color-primary) !important;
+}
+div[data-testid="stButton"] button[key="tt_manage_subjects"]:active {
+  transform: translateY(0px) !important;
+  box-shadow: var(--shadow-offset) !important;
+}
 </style>
 """
 
+def _render_html(html_str):
+    # Dedent lines to prevent markdown code block formatting
+    cleaned = "\n".join(line.strip() for line in html_str.splitlines())
+    st.markdown(cleaned, unsafe_allow_html=True)
+
+
 def _topnav(name):
     initial = name[:1].upper() if name else "T"
-    st.markdown(_TEACHER_CSS, unsafe_allow_html=True)
-    st.markdown(f"""
+    _render_html(_TEACHER_CSS)
+    _render_html(f"""
 <style>
 .ttn{{display:flex;align-items:center;justify-content:space-between;
   padding:0.9rem 0;border-bottom:3px solid #000000;margin-bottom:1.75rem;}}
@@ -219,7 +271,7 @@ def _topnav(name):
     <div><span class="ttn-uname">{name}</span><span class="ttn-urole">Teacher Portal</span></div>
   </div>
 </div>
-""", unsafe_allow_html=True)
+""")
 
 
 def _sec(title, sub=""):
@@ -235,18 +287,18 @@ def _sec(title, sub=""):
 
 
 def _empty(emoji, title, subtitle):
-    st.markdown(f"""
+    _render_html(f"""
 <div style="background:#FFFFFF;border:3px dashed #000000;border-radius:8px;
      box-shadow:4px 4px 0 #000000;padding:3rem 2rem;text-align:center;">
   <div style="font-size:2.5rem;margin-bottom:10px;">{emoji}</div>
   <div style="font-size:1.1rem;font-weight:800;color:#000000;
        font-family:'Outfit',sans-serif;margin-bottom:5px;text-transform:uppercase;">{title}</div>
   <div style="font-size:0.9rem;color:#333333;font-family:'Outfit',sans-serif;font-weight:600;">{subtitle}</div>
-</div>""", unsafe_allow_html=True)
+</div>""")
 
 
 def _stat_cards(n_sub, n_stu, n_sess, avg_rate="0.0%"):
-    st.markdown(f"""
+    _render_html(f"""
     <div class="teacher-stats-grid">
       <div class="teacher-stat-card">
         <span style="font-size: 1.35rem; margin-bottom: 6px;">📚</span>
@@ -273,23 +325,21 @@ def _stat_cards(n_sub, n_stu, n_sess, avg_rate="0.0%"):
         <span style="font-size: 0.65rem; color: var(--color-gray); margin-top: 1px;">Total present ratio</span>
       </div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
 
 def _tab_nav():
-    tabs = {
-        "take_attendance":    ("📷", "Take Attendance"),
-        "manage_subjects":    ("📚", "Subjects"),
-        "attendance_records": ("📊", "Analytics & Records"),
-    }
     cur = st.session_state.get("current_teacher_tab", "take_attendance")
-    cols = st.columns(len(tabs))
-    for col, (key, (icon, lbl)) in zip(cols, tabs.items()):
-        with col:
-            if st.button(f"{icon}  {lbl}", use_width_container=True if 'use_width_container' in locals() else True, key=f"tt_{key}"):
-                st.session_state.current_teacher_tab = key
-                st.rerun()
-    st.markdown('<hr style="margin:0 0 1.5rem;">', unsafe_allow_html=True)
+    is_active = (cur == "manage_subjects")
+    lbl = "📚 Access Subjects Registry"
+    if is_active:
+        lbl = "📚 Active Subject Registry"
+    st.markdown('<div class="premium-nav-card">', unsafe_allow_html=True)
+    if st.button(lbl, use_container_width=True, key="tt_manage_subjects"):
+        st.session_state.current_teacher_tab = "manage_subjects"
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+    _render_html('<hr style="margin:0 0 1.5rem;">')
 
 
 # ── Router ────────────────────────────────────────────────────────────────────
@@ -346,31 +396,93 @@ def teacher_dashboard():
     status_label = "SECURE" if avg_pct_float >= 75 else "WARNING"
     status_class = "safe" if avg_pct_float >= 75 else "warning"
 
+    # Compute real attendance trend path coordinates dynamically from records
+    rates_history = []
+    if records:
+        data_trend = []
+        for r in records:
+            ts = r.get("timestamp")
+            data_trend.append({
+                "ts_group": ts.split(".")[0] if ts else None,
+                "is_present": bool(r.get("is_present", False)),
+            })
+        df_trend = pd.DataFrame(data_trend)
+        if not df_trend.empty:
+            summary_sub = (
+                df_trend.groupby("ts_group")
+                .agg(Present=("is_present", "sum"), Total=("is_present", "count"))
+                .reset_index()
+            )
+            summary_sub["Rate %"] = (summary_sub["Present"] / summary_sub["Total"] * 100)
+            summary_sub = summary_sub.sort_values("ts_group")
+            rates_history = summary_sub["Rate %"].tail(6).tolist()
+
+    if len(rates_history) < 2:
+        rates_history = [avg_pct_float, avg_pct_float] if avg_pct_float > 0 else [80.0, 80.0]
+        
+    n_pts = len(rates_history)
+    svg_width = 200
+    svg_height = 40
+    
+    pts = []
+    for idx, r in enumerate(rates_history):
+        x = idx * (svg_width / max(1, n_pts - 1))
+        y = 35 - (r / 100) * 27
+        pts.append((x, y))
+        
+    line_d = "M " + " L ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+    area_d = line_d + f" L {pts[-1][0]:.1f},{svg_height:.1f} L {pts[0][0]:.1f},{svg_height:.1f} Z"
+    
+    # Calculate trend text and latest value
+    latest_val = rates_history[-1]
+    if len(rates_history) >= 2:
+        diff = rates_history[-1] - rates_history[-2]
+        if diff > 0.5:
+            trend_dir = f"▲ UPWARD (+{diff:.1f}%)"
+            trend_class = "safe"
+        elif diff < -0.5:
+            trend_dir = f"▼ DOWNWARD ({diff:.1f}%)"
+            trend_class = "warning"
+        else:
+            trend_dir = "▲ STABLE"
+            trend_class = "safe"
+    else:
+        trend_dir = "▲ STABLE"
+        trend_class = "safe"
+        
+    tooltip_circles = ""
+    for idx, (x, y) in enumerate(pts):
+        rate_val = rates_history[idx]
+        tooltip_circles += f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3" fill="#5865F2" stroke="#FFFFFF" stroke-width="1"><title>Session {idx+1}: {rate_val:.1f}%</title></circle>'
+
     # SECTION 1: AI Teacher Command Center Hero Panel
     hero_html = f"""
     <div class="teacher-hero-card animate-fade-in">
       <div class="teacher-hero-container">
         <!-- LEFT: AI Teacher Command Center -->
         <div class="teacher-hero-left">
-          <span class="profile-dept">CSE DEPARTMENT • CORE PORTAL</span>
-          <div class="sidebar-profile-header" style="display: flex; align-items: center; gap: 12px; margin-top: 4px;">
-            <div class="ttn-av" style="width: 44px; height: 44px; font-size: 1.1rem; box-shadow: none;">{name[:1].upper()}</div>
-            <div class="profile-title-col">
-              <span class="profile-name">{name}</span>
-              <span style="font-size: 0.7rem; color: var(--color-gray); font-family: monospace;">Sync: Active | ID: #{teacher_id}</span>
+          <span class="profile-dept" style="font-size:0.6rem; font-weight:800; color:var(--color-primary); letter-spacing:0.1em; text-transform:uppercase; font-family:'Outfit',sans-serif;">CSE DEPARTMENT • CORE PORTAL</span>
+          <div class="sidebar-profile-header" style="display: flex; align-items: center; gap: 16px; margin-top: 10px;">
+            <div class="ttn-av" style="width: 54px; height: 54px; font-size: 1.35rem; font-weight: 900; border-radius: 10px; border: 2.5px solid #000; box-shadow: 2px 2px 0 #000; flex-shrink: 0; background: var(--color-primary); color: #fff; display: flex; align-items: center; justify-content: center;">{name[:1].upper()}</div>
+            <div class="profile-title-col" style="display: flex; flex-direction: column; gap: 4px;">
+              <span class="profile-name" style="font-size: 1.85rem; font-weight: 900; color: #111111; font-family: 'Outfit', sans-serif; line-height: 1.1;">{name}</span>
+              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span style="font-size: 0.72rem; color: var(--color-gray); font-family: monospace; font-weight: bold;">ID: #{teacher_id}</span>
+                <span style="background: #E0F8E9; color: #15803D; border: 1.5px solid #000; border-radius: 4px; padding: 2px 6px; font-size: 0.65rem; font-weight: 800; font-family: 'Outfit', sans-serif; display: inline-flex; align-items: center; gap: 4px;"><span class="status-pulse-dot safe" style="width: 5px; height: 5px; border-radius: 50%; display: inline-block; background: #15803D;"></span> ONLINE SYNC</span>
+              </div>
             </div>
           </div>
           
-          <div class="sidebar-divider" style="border-top: 1.5px dashed rgba(0,0,0,0.1); margin: 6px 0;"></div>
+          <div class="sidebar-divider" style="border-top: 1.5px dashed rgba(0,0,0,0.1); margin: 12px 0;"></div>
           
           <div>
             <span style="font-size: 0.65rem; font-weight: 800; color: var(--color-gray); letter-spacing: 0.05em; display: block; margin-bottom: 6px;">AI OPERATING SUMMARY</span>
             <p style="font-size: 0.78rem; color: #333333; line-height: 1.4; margin: 0;">
-              "Total academic courses active: <b>{len(all_sub)}</b>. Semester attendance holds steady at <b>{avg_rate}</b>. Security diagnostics report all verification scanners online."
+              Total academic courses active: <b>{len(all_sub)}</b>. Semester attendance holds steady at <b>{avg_rate}</b>. Security diagnostics report all verification scanners online.
             </p>
           </div>
           
-          <div class="sidebar-divider" style="border-top: 1.5px dashed rgba(0,0,0,0.1); margin: 6px 0;"></div>
+          <div class="sidebar-divider" style="border-top: 1.5px dashed rgba(0,0,0,0.1); margin: 12px 0;"></div>
           
           <div>
             <span style="font-size: 0.65rem; font-weight: 800; color: var(--color-gray); letter-spacing: 0.05em; display: block; margin-bottom: 6px;">PENDING SYSTEM ACTIONS</span>
@@ -397,31 +509,32 @@ def teacher_dashboard():
             <div class="console-circular-gauge" style="position: relative; width: 100px; height: 100px;">
               <svg viewBox="0 0 36 36" class="circular-chart {status_class}">
                 <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" style="fill: none; stroke: #F3F4F6; stroke-width: 3.2;" />
-                <path class="circle" stroke-dasharray="{avg_pct_float:.1f}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" style="fill: none; stroke-width: 3.2; stroke-linecap: round;" />
+                <path class="circle" stroke-dasharray="{avg_pct_float:.1f}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" style="fill: none; stroke-width: 3.2; stroke-linecap: round; --dashoffset: {100 - avg_pct_float:.1f};" />
               </svg>
               <div class="gauge-percentage-overlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1rem; font-weight: 800; color: #111111;">{avg_rate}</div>
             </div>
           </div>
           
-          <div style="border-top: 1.5px dashed rgba(0,0,0,0.1); margin: 4px 0;"></div>
+          <div style="border-top: 1.5px dashed rgba(0,0,0,0.1); margin: 12px 0;"></div>
           
           <!-- Sparkline Trend Indicator -->
           <div class="console-trend-chart-deck">
-            <div class="trend-chart-header" style="display: flex; justify-content: space-between; align-items: center;">
-              <span class="console-label-uppercase" style="font-size: 0.65rem; font-weight: 800; color: var(--color-gray); letter-spacing: 0.05em;">ATTENDANCE DIRECTION</span>
-              <span class="trend-direction-badge {status_class}" style="font-size: 0.65rem; font-weight: 800;">▲ STABLE</span>
+            <div class="trend-chart-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <span class="console-label-uppercase" style="font-size: 0.65rem; font-weight: 800; color: var(--color-gray); letter-spacing: 0.05em;">LATEST: {latest_val:.1f}%</span>
+              <span class="trend-direction-badge {trend_class}" style="font-size: 0.65rem; font-weight: 800;">{trend_dir}</span>
             </div>
             
-            <div class="sparkline-container-card" style="height: 54px; border: 1.5px solid #000; border-radius: 8px; overflow: hidden; background: #F8F9FA; padding: 4px; margin-top: 6px;">
-              <svg viewBox="0 0 200 40" class="sparkline-graphic-svg" style="width: 100%; height: 100%;">
+            <div class="sparkline-container-card" style="height: 54px; border: 2.5px solid #000; border-radius: 8px; overflow: hidden; background: #F8F9FA; padding: 4px; margin-top: 6px;">
+              <svg viewBox="0 0 200 40" class="sparkline-graphic-svg" style="width: 100%; height: 100%; overflow: visible;">
                 <defs>
                   <linearGradient id="spark-gradient-teacher" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stop-color="var(--color-primary)" stop-opacity="0.35"/>
                     <stop offset="100%" stop-color="var(--color-primary)" stop-opacity="0"/>
                   </linearGradient>
                 </defs>
-                <path class="sparkline-line" d="M0,30 C20,28 40,22 65,25 C90,12 110,8 135,14 C160,5 180,2 200,6" style="fill: none; stroke: var(--color-primary); stroke-width: 2.2;" />
-                <path class="sparkline-area" d="M0,30 C20,28 40,22 65,25 C90,12 110,8 135,14 C160,5 180,2 200,6 L200,40 L0,40 Z" fill="url(#spark-gradient-teacher)" style="stroke: none;" />
+                <path class="sparkline-area" d="{area_d}" fill="url(#spark-gradient-teacher)" style="stroke: none;" />
+                <path class="sparkline-line" d="{line_d}" style="fill: none; stroke: var(--color-primary); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;" />
+                {tooltip_circles}
               </svg>
             </div>
           </div>
@@ -429,18 +542,18 @@ def teacher_dashboard():
       </div>
     </div>
     """
-    st.markdown(hero_html, unsafe_allow_html=True)
+    _render_html(hero_html)
 
     # SECTION 3: Live Statistics Widgets Row
     _stat_cards(len(all_sub), n_stu, n_sess, avg_rate)
 
     # SECTION 2: Quick Actions Grid
-    st.markdown("""
+    _render_html("""
     <div style="background:#5865F2;border:3px solid #000000;border-radius:6px;
          box-shadow:4px 4px 0 #000000;padding:0.75rem 1.25rem;margin-bottom:1rem;">
       <div style="font-size:0.95rem;font-weight:900;color:#FFFFFF;text-transform:uppercase;
            font-family:'Outfit',sans-serif;margin-bottom:2px;letter-spacing:0.02em;">QUICK COMMANDS</div>
-    </div>""", unsafe_allow_html=True)
+    </div>""")
 
     q1, q2, q3, q4 = st.columns(4)
     with q1:
@@ -457,9 +570,10 @@ def teacher_dashboard():
     with q4:
         if st.button("**🎙 Voice Mode**\n\nRecord class audio", key="action_voice", use_container_width=True):
             st.session_state.current_teacher_tab = "take_attendance"
+            st.session_state.launch_voice_roll = True
             st.rerun()
 
-    st.markdown('<div style="height:1.5rem"></div>', unsafe_allow_html=True)
+    _render_html('<div style="height:1.5rem"></div>')
 
     if "current_teacher_tab" not in st.session_state:
         st.session_state.current_teacher_tab = "take_attendance"
@@ -495,57 +609,74 @@ def _tab_attendance():
     _sec("Take AI Attendance", "Deploy classroom facial recognition pipeline to check student check-ins.")
 
     # Workspace columns layout
-    left_col, center_col, right_col = st.columns([1.2, 1.8, 1.0], gap="medium")
+    left_col, center_col, right_col = st.columns([1.3, 1.8, 1.1], gap="medium")
 
     with left_col:
-        st.markdown("""
-        <div style="background: #F8F9FA; border: 2.5px solid #000; border-radius: 12px; padding: 14px; box-shadow: 2px 2px 0 #000; height: 100%;">
-          <span style="font-size: 0.65rem; font-weight: 800; color: var(--color-gray); letter-spacing: 0.05em; display: block; margin-bottom: 6px;">1. CONFIGURATION</span>
-          <span style="font-size: 0.72rem; color: #111111; font-weight: 600; display: block; margin-bottom: 4px;">Choose Target Subject</span>
-        </div>
-        """, unsafe_allow_html=True)
+        _render_html("""
+        <div style="background: #F8F9FA; border: 3px solid #000; border-radius: 12px; padding: 16px; box-shadow: 4px 4px 0 #000; margin-bottom: 12px;">
+          <span style="font-size: 0.65rem; font-weight: 800; color: var(--color-primary); letter-spacing: 0.05em; display: block; margin-bottom: 6px;">1. CONFIGURATION LAYER</span>
+          <span style="font-size: 0.85rem; color: #111111; font-weight: 800; display: block; margin-bottom: 2px;">Target Subject Registry</span>
+        </div>""")
         sel = st.selectbox("Select Subject", options=list(subject_options.keys()), label_visibility="collapsed")
         
         target_subject = subject_options[sel]
         sel_id = target_subject["subject_id"]
         
-        st.markdown(f"""
-        <div style="margin-top: 10px; padding: 10px; background: #FFFFFF; border: 1.5px solid #000; border-radius: 8px;">
-          <span style="font-size: 0.7rem; color: var(--color-gray); font-family: monospace; display: block;">SUBJECT CODE: {target_subject['subject_code']}</span>
-          <span style="font-size: 0.7rem; color: var(--color-gray); font-family: monospace; display: block;">ENROLLED STUDENTS: {target_subject.get('total_students', 0)}</span>
-          <span style="font-size: 0.7rem; color: var(--color-gray); font-family: monospace; display: block;">SECTIONS: {target_subject.get('section', 'N/A')}</span>
-        </div>
-        """, unsafe_allow_html=True)
+        # Check if launcher flag is active
+        if st.session_state.get("launch_voice_roll"):
+            st.session_state.launch_voice_roll = False
+            voice_attendance_dialog(sel_id)
         
-        st.text_area("Session Notes", placeholder="e.g. Lecture topic summary...", key="teacher_notes", height=80)
+        _render_html(f"""
+        <div style="margin-top: 10px; margin-bottom: 12px; padding: 12px; background: #FFFFFF; border: 2.5px solid #000; border-radius: 10px; box-shadow: 3px 3px 0 #000;">
+          <div style="font-size: 0.72rem; color: #111; font-weight: 700; margin-bottom: 6px; font-family: 'Outfit', sans-serif;">REGISTRY DETAILS</div>
+          <span style="font-size: 0.7rem; color: var(--color-gray); font-family: monospace; display: block; margin-bottom: 2px;">CODE: <b>{target_subject['subject_code']}</b></span>
+          <span style="font-size: 0.7rem; color: var(--color-gray); font-family: monospace; display: block; margin-bottom: 2px;">ENROLLED: <b>{target_subject.get('total_students', 0)} Students</b></span>
+          <span style="font-size: 0.7rem; color: var(--color-gray); font-family: monospace; display: block;">SECTION: <b>{target_subject.get('section', 'N/A')}</b></span>
+        </div>""")
+        
+        # Load and display persistent session notes
+        from src.database.db import get_session_notes, save_session_notes
+        initial_notes = get_session_notes(teacher_id, sel_id)
+        notes_val = st.text_area("Session Notes", value=initial_notes, placeholder="e.g. Lecture topic summary...", key=f"notes_widget_{sel_id}", height=120)
+        
+        st.markdown('<div style="height:4px"></div>', unsafe_allow_html=True)
+        if st.button("💾 Save Session Notes", key=f"save_notes_btn_{sel_id}", use_container_width=True):
+            save_session_notes(teacher_id, sel_id, notes_val)
+            from datetime import datetime
+            st.session_state[f"notes_saved_ts_{sel_id}"] = datetime.now().strftime("%I:%M %p")
+            st.toast("Notes saved successfully!")
+            
+        saved_ts = st.session_state.get(f"notes_saved_ts_{sel_id}")
+        if saved_ts:
+            st.success("Session notes saved successfully!")
+            st.caption(f"✓ Last saved at {saved_ts}")
 
     with center_col:
-        st.markdown("""
-        <div style="background: #F8F9FA; border: 2.5px dashed #000000; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 12px;">
-          <span style="font-size: 1.8rem; display: block; margin-bottom: 4px;">📸</span>
-          <span style="font-family: 'Outfit', sans-serif; font-size: 0.9rem; font-weight: 800; color: #111; display: block;">Classroom Media Upload</span>
-          <span style="font-size: 0.7rem; color: var(--color-gray); display: block; margin-top: 2px;">Upload classroom group photos to run diagnostics</span>
-        </div>
-        """, unsafe_allow_html=True)
+        _render_html("""
+        <div style="background: #FFFFFF; border: 3px dashed #000000; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 14px; box-shadow: 4px 4px 0 #000;">
+          <span style="font-size: 2rem; display: block; margin-bottom: 6px;">📸</span>
+          <span style="font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 900; color: #111; display: block;">Classroom Media Upload</span>
+          <span style="font-size: 0.72rem; color: var(--color-gray); display: block; margin-top: 2px;">Upload classroom group photos to run AI facial scanner</span>
+        </div>""")
         
         if st.button("＋ Add Classroom Photos", type="primary", use_container_width=True):
             add_photos_dialog()
 
         if st.session_state.attendance_images:
-            st.markdown(f"""
-            <div style="margin: 12px 0 6px;">
-              <span style="font-size: 0.65rem; font-weight: 800; color: var(--color-gray); letter-spacing: 0.05em; display: block;">UPLOADED MEDIA ({len(st.session_state.attendance_images)} PHOTOS)</span>
-            </div>
-            """, unsafe_allow_html=True)
+            _render_html(f"""
+            <div style="margin: 16px 0 8px;">
+              <span style="font-size: 0.65rem; font-weight: 800; color: var(--color-gray); letter-spacing: 0.05em; display: block; text-transform: uppercase;">UPLOADED MEDIA ({len(st.session_state.attendance_images)} PHOTOS)</span>
+            </div>""")
             gcols = st.columns(4)
             for idx, img in enumerate(st.session_state.attendance_images):
                 with gcols[idx % 4]:
                     st.image(img, use_container_width=True)
 
-        st.markdown('<div style="height:12px"></div>', unsafe_allow_html=True)
+        _render_html('<div style="height:12px"></div>')
         has_media = bool(st.session_state.attendance_images)
         
-        b1, b2, b3 = st.columns(3)
+        b1, b2, b3 = st.columns([1, 1.3, 1], gap="small")
         with b1:
             if st.button("🗑 Clear All", type="secondary", use_container_width=True, disabled=not has_media):
                 st.session_state.attendance_images = []
@@ -566,7 +697,7 @@ def _tab_attendance():
                 </div>
                 """
                 pipeline_placeholder = st.empty()
-                pipeline_placeholder.markdown(pipeline_html, unsafe_allow_html=True)
+                pipeline_placeholder.markdown(pipeline_html.strip(), unsafe_allow_html=True)
                 
                 with st.spinner("AI Scanner resolving class check-ins..."):
                     det_map = {}
@@ -610,34 +741,34 @@ def _tab_attendance():
                 voice_attendance_dialog(sel_id)
 
     with right_col:
-        st.markdown(f"""
-        <div style="background: #FFFFFF; border: 2.5px solid #000; border-radius: 12px; padding: 14px; box-shadow: 2px 2px 0 #000; height: 100%;">
-          <span style="font-size: 0.65rem; font-weight: 800; color: var(--color-gray); letter-spacing: 0.05em; display: block; margin-bottom: 6px;">3. AI DIAGNOSTICS</span>
+        _render_html(f"""
+        <div style="background: #FFFFFF; border: 3px solid #000; border-radius: 12px; padding: 16px; box-shadow: 4px 4px 0 #000; height: 100%;">
+          <span style="font-size: 0.65rem; font-weight: 800; color: var(--color-primary); letter-spacing: 0.05em; display: block; margin-bottom: 8px;">3. AI DIAGNOSTICS LAYER</span>
           
-          <div style="margin-bottom: 12px;">
+          <div style="margin-bottom: 14px;">
             <span style="font-size: 0.58rem; color: var(--color-gray); font-weight: 800; display: block;">SCANNER STATE</span>
             <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
-              <span class="status-pulse-dot safe" style="width: 6px; height: 6px; border-radius: 50%; display: inline-block;"></span>
-              <span style="font-size: 0.72rem; font-weight: 700; color: var(--color-success);">ONLINE & READIED</span>
+              <span class="status-pulse-dot safe" style="width: 6px; height: 6px; border-radius: 50%; display: inline-block; background: var(--color-success); animation: softPulse 2s infinite ease-in-out;"></span>
+              <span style="font-size: 0.72rem; font-weight: 800; color: var(--color-success);">ONLINE & READIED</span>
             </div>
           </div>
           
-          <div style="margin-bottom: 12px; border-top: 1.5px dashed rgba(0,0,0,0.1); padding-top: 8px;">
+          <div style="margin-bottom: 14px; border-top: 1.5px dashed rgba(0,0,0,0.15); padding-top: 8px;">
             <span style="font-size: 0.58rem; color: var(--color-gray); font-weight: 800; display: block;">RECOGNITION METRIC</span>
-            <span style="font-size: 0.95rem; font-weight: 800; color: #111111; display: block; margin-top: 2px;">98.6% Accuracy</span>
+            <span style="font-size: 0.95rem; font-weight: 900; color: #111111; display: block; margin-top: 2px;">98.6% Accuracy</span>
             <span style="font-size: 0.58rem; color: var(--color-gray);">ResNet-50 embedding matrix</span>
           </div>
           
-          <div style="border-top: 1.5px dashed rgba(0,0,0,0.1); padding-top: 8px;">
+          <div style="border-top: 1.5px dashed rgba(0,0,0,0.15); padding-top: 8px;">
             <span style="font-size: 0.58rem; color: var(--color-gray); font-weight: 800; display: block;">SCANNER RECOMMENDATIONS</span>
-            <div style="margin-top: 4px; display: flex; flex-direction: column; gap: 4px; font-size: 0.68rem; color: #333333; line-height: 1.3;">
+            <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 4px; font-size: 0.68rem; color: #333333; line-height: 1.4; font-weight: 600;">
               <span>• Ensure good brightness</span>
               <span>• Check angle alignment</span>
               <span>• Multiple photos recommended</span>
             </div>
           </div>
         </div>
-        """, unsafe_allow_html=True)
+        """)
 
 
 # ── Tab: Subjects ─────────────────────────────────────────────────────────────
@@ -739,7 +870,7 @@ def _tab_analytics():
         )
 
         alert_count = len(low)
-        st.markdown(f"""
+        _render_html(f"""
 <div style="background:#FFF5F5;border:3px solid #EF4444;border-radius:12px;
      box-shadow:4px 4px 0 #000000;padding:1.25rem 1.5rem;margin-bottom:1.75rem;">
   <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
@@ -758,7 +889,7 @@ def _tab_analytics():
     </div>
   </div>
 </div>
-""", unsafe_allow_html=True)
+""")
 
         display_low = low[["Student", "Subject", "Present", "Total", "Rate %"]].copy()
         display_low = display_low.rename(columns={"Present": "Attended", "Total": "Classes"})
@@ -768,11 +899,11 @@ def _tab_analytics():
     # ── Section 6: Recent Sessions (Timeline Cards Feed) ──────────────────
     _sec("Recent Sessions Feed", "Chronological attendance summaries showing latest recognition accuracy runs.")
     
-    st.markdown('<div class="timeline-deck" style="margin-bottom: 24px;">', unsafe_allow_html=True)
+    _render_html('<div class="timeline-deck" style="margin-bottom: 24px;">')
     for idx, row in summary.sort_values("ts_group", ascending=False).head(3).iterrows():
         pct = row["Rate %"]
         status_color = "var(--color-success)" if pct >= 75 else "var(--color-danger)"
-        st.markdown(f"""
+        _render_html(f"""
         <div class="timeline-card-box">
           <div style="display: flex; flex-direction: column;">
             <span style="font-family: var(--font-family-display); font-size: 0.95rem; font-weight: 800; color: #111111;">{row['Subject']}</span>
@@ -783,8 +914,8 @@ def _tab_analytics():
             <span style="font-size: 0.65rem; color: var(--color-gray); font-weight: 600;">{row['Present']} / {row['Total']} PRESENT</span>
           </div>
         </div>
-        """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+        """)
+    _render_html('</div>')
 
     # ── Session records table ──────────────────────────────────────────────
     _sec("All Attendance Logs", "Session-by-session records sorted by most recent.")
@@ -794,13 +925,13 @@ def _tab_analytics():
     st.dataframe(display, use_container_width=True, hide_index=True)
 
     # ── Section 7: Analytics Preview ───────────────────────────────────────
-    st.markdown('<div style="height:1rem"></div>', unsafe_allow_html=True)
+    _render_html('<div style="height:1rem"></div>')
     _sec("Attendance Analytics Preview", "Detailed semester analytics, attendance growth trends, and course averages.")
     
     col_trend, col_sub_avg = st.columns(2, gap="medium")
     
     with col_trend:
-        st.markdown('<span style="font-size: 0.75rem; font-weight: 800; color: var(--color-gray); text-transform: uppercase;">ATTENDANCE MOMENTUM</span>', unsafe_allow_html=True)
+        _render_html('<span style="font-size: 0.75rem; font-weight: 800; color: var(--color-gray); text-transform: uppercase;">ATTENDANCE MOMENTUM</span>')
         if len(summary) >= 2:
             chart_df = (summary.sort_values("ts_group")[["Time", "Rate %"]]
                         .set_index("Time"))
@@ -809,7 +940,7 @@ def _tab_analytics():
             st.info("Run more sessions to trace trends.")
             
     with col_sub_avg:
-        st.markdown('<span style="font-size: 0.75rem; font-weight: 800; color: var(--color-gray); text-transform: uppercase;">SUBJECT AVERAGES</span>', unsafe_allow_html=True)
+        _render_html('<span style="font-size: 0.75rem; font-weight: 800; color: var(--color-gray); text-transform: uppercase;">SUBJECT AVERAGES</span>')
         sub_avg = (
             summary.groupby("Subject")["Rate %"]
             .mean()

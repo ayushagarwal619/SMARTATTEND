@@ -3,116 +3,322 @@ Redesigned with Neo-Brutalism design system.
 Features: Face Recognition, QR Joining, Attendance Analytics, Secure Records.
 """
 import streamlit as st
+from datetime import datetime
 from src.components.header import header_home
 from src.components.footer import footer_home
 from src.ui.base_layout import style_base_layout, style_background_home
 
-# ── SVG dashboard mockup ──────────────────────────────────────────────────────
-_MOCKUP = """
-<svg viewBox="0 0 540 360" xmlns="http://www.w3.org/2000/svg"
-     style="width:100%;max-width:540px;border-radius:8px;
-            border:4px solid #000000;box-shadow:6px 6px 0 #000000;display:block;">
-  <!-- card bg -->
-  <rect width="540" height="360" rx="0" fill="#FAFAFA"/>
-  <!-- topbar -->
-  <rect width="540" height="46" rx="0" fill="#5865F2" stroke="#000000" stroke-width="3"/>
-  <!-- logo mark in bar -->
-  <rect x="14" y="10" width="22" height="22" rx="4" fill="white" stroke="#000" stroke-width="2"/>
-  <path d="M25 13L20 15.5v4c0 2.6 1.9 5 5 5.6 3.1-.6 5-3 5-5.6v-4L25 13z"
-        stroke="#5865F2" stroke-width="1.2" fill="none"/>
-  <path d="M23 18l1.5 1.5L27 16" stroke="#5865F2" stroke-width="1.2"
-        stroke-linecap="round" stroke-linejoin="round"/>
-  <rect x="44" y="17" width="80" height="8" rx="2" fill="white" stroke="#000" stroke-width="1.5"/>
-  <!-- avatar pill -->
-  <rect x="440" y="10" width="86" height="22" rx="4" fill="#FFD600" stroke="#000000" stroke-width="2"/>
-  <circle cx="452" cy="21" r="6" fill="white" stroke="#000" stroke-width="1.5"/>
-  <text x="463" y="25" font-size="9" fill="black" font-family="Outfit,sans-serif" font-weight="800">Ankit K.</text>
+# ── Dynamic live mockup dashboard ─────────────────────────────────────────────
+def get_mockup_dashboard_html():
+    # Fetch real telemetry from Supabase
+    try:
+        from src.database.config import supabase
+        subjects_data = supabase.table("subjects").select("subject_id").execute().data
+        students_data = supabase.table("students").select("student_id").execute().data
+        logs_data = supabase.table("attendance_logs").select("is_present").execute().data
+        
+        total_subjects = len(subjects_data)
+        total_students = len(students_data)
+        total_logs = len(logs_data)
+        
+        if total_logs > 0:
+            present_count = sum(1 for r in logs_data if r.get("is_present"))
+            absent_count = total_logs - present_count
+            attendance_pct = (present_count / total_logs) * 100
+        else:
+            present_count = 0
+            absent_count = 0
+            attendance_pct = 0.0
 
-  <!-- stat cards -->
-  <rect x="14" y="62" width="116" height="62" rx="4" fill="white" stroke="#000000" stroke-width="2.5" box-shadow="2px 2px 0 #000"/>
-  <rect x="14" y="118" width="116" height="6" rx="0" fill="#5865F2" stroke="#000" stroke-width="2.5"/>
-  <text x="22" y="81" font-size="8" fill="black" font-family="Outfit,sans-serif" font-weight="900" letter-spacing="0.5">SUBJECTS</text>
-  <text x="22" y="106" font-size="24" fill="black" font-family="Outfit,sans-serif" font-weight="900">6</text>
+        # Query recent activity feed
+        recent_logs = supabase.table("attendance_logs").select("*, students(name), subjects(subject_code)").order("timestamp", desc=True).limit(3).execute().data
+        recent_activities = []
+        for log in recent_logs:
+            stu_name = log.get("students", {}).get("name", "Student")
+            sub_code = log.get("subjects", {}).get("subject_code", "CS301")
+            is_present = log.get("is_present", False)
+            ts = log.get("timestamp", "")
+            time_str = ts.split("T")[1][:5] if "T" in ts else "12:00"
+            recent_activities.append({
+                "name": stu_name,
+                "subject": sub_code,
+                "status": "Present" if is_present else "Absent",
+                "time": time_str
+            })
+    except Exception:
+        # Fallback values if DB connection fails
+        total_subjects = 6
+        total_students = 120
+        total_logs = 480
+        present_count = 420
+        absent_count = 60
+        attendance_pct = 87.5
+        recent_activities = [
+            {"name": "Ankit Kumar", "subject": "CS301", "status": "Present", "time": "09:15"},
+            {"name": "Rahul Verma", "subject": "CS405", "status": "Present", "time": "11:00"},
+            {"name": "Sneha Gupta", "subject": "CS301", "status": "Absent", "time": "14:15"}
+        ]
 
-  <rect x="140" y="62" width="116" height="62" rx="4" fill="white" stroke="#000000" stroke-width="2.5"/>
-  <rect x="140" y="118" width="116" height="6" rx="0" fill="#00E676" stroke="#000" stroke-width="2.5"/>
-  <text x="148" y="81" font-size="8" fill="black" font-family="Outfit,sans-serif" font-weight="900" letter-spacing="0.5">CLASSES</text>
-  <text x="148" y="106" font-size="24" fill="black" font-family="Outfit,sans-serif" font-weight="900">48</text>
+    # Render recent activity items
+    activity_items_html = ""
+    for act in recent_activities:
+        status_cls = "present" if act["status"] == "Present" else "absent"
+        status_char = "✓" if act["status"] == "Present" else "✗"
+        activity_items_html += f"""
+        <div class="feed-item {status_cls}">
+          <span class="feed-name">{act['name']}</span>
+          <span>{act['subject']}</span>
+          <span class="feed-time">{status_char} {act['time']}</span>
+        </div>"""
 
-  <rect x="266" y="62" width="116" height="62" rx="4" fill="white" stroke="#000000" stroke-width="2.5"/>
-  <rect x="266" y="118" width="116" height="6" rx="0" fill="#EB459E" stroke="#000" stroke-width="2.5"/>
-  <text x="274" y="81" font-size="8" fill="black" font-family="Outfit,sans-serif" font-weight="900" letter-spacing="0.5">ATTENDED</text>
-  <text x="274" y="106" font-size="24" fill="black" font-family="Outfit,sans-serif" font-weight="900">42</text>
-
-  <rect x="392" y="62" width="134" height="62" rx="4" fill="#FFFFFF" stroke="#000000" stroke-width="2.5"/>
-  <rect x="392" y="118" width="134" height="6" rx="0" fill="#FFD600" stroke="#000" stroke-width="2.5"/>
-  <text x="400" y="81" font-size="8" fill="black" font-family="Outfit,sans-serif" font-weight="900" letter-spacing="0.5">ATTENDANCE</text>
-  <text x="400" y="106" font-size="24" fill="#5865F2" font-family="Outfit,sans-serif" font-weight="900">87%</text>
-
-  <!-- subject cards -->
-  <rect x="14" y="140" width="248" height="72" rx="4" fill="white" stroke="#000000" stroke-width="2.5"/>
-  <rect x="14" y="140" width="6" height="72" rx="0" fill="#5865F2"/>
-  <text x="28" y="158" font-size="10" fill="black" font-family="Outfit,sans-serif" font-weight="900">Data Structures &amp; Algorithms</text>
-  <rect x="28" y="166" width="46" height="12" rx="3" fill="#5865F2" stroke="#000" stroke-width="1.5"/>
-  <text x="51" y="175" text-anchor="middle" font-size="8" fill="white" font-family="Outfit,sans-serif" font-weight="900">CS301</text>
-  <text x="28" y="192" font-size="8.5" fill="#333333" font-family="Outfit,sans-serif" font-weight="700">Section A · 82% attendance</text>
-
-  <rect x="276" y="140" width="250" height="72" rx="4" fill="white" stroke="#000000" stroke-width="2.5"/>
-  <rect x="276" y="140" width="6" height="72" rx="0" fill="#EB459E"/>
-  <text x="290" y="158" font-size="10" fill="black" font-family="Outfit,sans-serif" font-weight="900">Database Management Systems</text>
-  <rect x="290" y="166" width="46" height="12" rx="3" fill="#EB459E" stroke="#000" stroke-width="1.5"/>
-  <text x="313" y="175" text-anchor="middle" font-size="8" fill="white" font-family="Outfit,sans-serif" font-weight="900">CS405</text>
-  <text x="290" y="192" font-size="8.5" fill="#333333" font-family="Outfit,sans-serif" font-weight="700">Section B · 60% attendance</text>
-
-  <!-- analytics mini chart -->
-  <rect x="14" y="226" width="300" height="120" rx="4" fill="white" stroke="#000000" stroke-width="2.5"/>
-  <text x="24" y="244" font-size="9" fill="black" font-family="Outfit,sans-serif" font-weight="900">Attendance Trend</text>
-  <!-- bar chart -->
-  <rect x="30"  y="280" width="18" height="35" rx="2" fill="#5865F2" stroke="#000" stroke-width="1.5"/>
-  <rect x="58"  y="265" width="18" height="50" rx="2" fill="#5865F2" stroke="#000" stroke-width="1.5"/>
-  <rect x="86"  y="290" width="18" height="25" rx="2" fill="#5865F2" stroke="#000" stroke-width="1.5"/>
-  <rect x="114" y="270" width="18" height="45" rx="2" fill="#5865F2" stroke="#000" stroke-width="1.5"/>
-  <rect x="142" y="255" width="18" height="60" rx="2" fill="#22C55E" stroke="#000" stroke-width="1.5"/>
-  <!-- x labels -->
-  <text x="39"  y="330" text-anchor="middle" font-size="7.5" fill="black" font-family="Outfit" font-weight="800">Jan</text>
-  <text x="67"  y="330" text-anchor="middle" font-size="7.5" fill="black" font-family="Outfit" font-weight="800">Feb</text>
-  <text x="95"  y="330" text-anchor="middle" font-size="7.5" fill="black" font-family="Outfit" font-weight="800">Mar</text>
-  <text x="123" y="330" text-anchor="middle" font-size="7.5" fill="black" font-family="Outfit" font-weight="800">Apr</text>
-  <text x="151" y="330" text-anchor="middle" font-size="7.5" fill="black" font-family="Outfit" font-weight="800">May</text>
-
-  <!-- activity feed -->
-  <rect x="328" y="226" width="198" height="120" rx="4" fill="white" stroke="#000000" stroke-width="2.5"/>
-  <text x="338" y="244" font-size="9" fill="black" font-family="Outfit,sans-serif" font-weight="900">Recent Activity</text>
-  <rect x="338" y="256" width="10" height="10" rx="2" fill="#22C55E" stroke="#000" stroke-width="1.5"/>
-  <text x="343" y="264" text-anchor="middle" font-size="8" fill="white" font-weight="900">✓</text>
-  <text x="354" y="264" font-size="8.5" fill="black" font-family="Outfit" font-weight="700">Present — DSA · 09:15</text>
+    current_time_str = datetime.now().strftime("%H:%M")
+    
+    return f"""
+<div class="dashboard-window" style="animation: floatCard 6s infinite ease-in-out; will-change: transform;">
+  <!-- header -->
+  <div class="window-header" style="background:#111; color:#fff; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:3px solid #111;">
+    <div class="window-dots" style="display:flex; gap:6px;">
+      <span class="dot red" style="width:8px; height:8px; border-radius:50%; background:#EF4444; border:1px solid #000;"></span>
+      <span class="dot yellow" style="width:8px; height:8px; border-radius:50%; background:#FACC15; border:1px solid #000;"></span>
+      <span class="dot green" style="width:8px; height:8px; border-radius:50%; background:#22C55E; border:1px solid #000;"></span>
+    </div>
+    <span class="window-title" style="font-size:0.7rem; font-weight:800; font-family:monospace; letter-spacing:0.05em;">SMARTATTEND AI SCAN SERVER v2.0</span>
+    <span class="window-status" style="font-size:0.65rem; font-weight:800; color:#22C55E; font-family:monospace;"><span class="live-dot" style="width:5px; height:5px; background:#EF4444; border-radius:50%; display:inline-block; margin-right:4px;"></span> LIVE SCAN</span>
+  </div>
   
-  <rect x="338" y="274" width="10" height="10" rx="2" fill="#22C55E" stroke="#000" stroke-width="1.5"/>
-  <text x="343" y="282" text-anchor="middle" font-size="8" fill="white" font-weight="900">✓</text>
-  <text x="354" y="282" font-size="8.5" fill="black" font-family="Outfit" font-weight="700">Present — DBMS · 11:00</text>
+  <div class="window-body" style="display:flex; background:#ffffff; height:380px;">
+    <!-- left side: webcam viewport -->
+    <div class="webcam-viewport" style="position:relative; background:#E8ECEF; overflow:hidden; flex:1.15; border-right:2px solid #111111; height:100%; display:flex; align-items:center; justify-content:center;">
+      
+      <!-- Multi-stage scanner box -->
+      <div class="demo-scanner-container" data-stage="1" style="position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+        <div class="webcam-grid" style="position:absolute; inset:0; background-image:linear-gradient(to right, rgba(0,0,0,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.06) 1px, transparent 1px); background-size:16px 16px;"></div>
+        
+        <!-- Neural Network Overlay Mesh -->
+        <svg style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none; opacity:0.15;" xmlns="http://www.w3.org/2000/svg">
+          <line x1="20" y1="50" x2="80" y2="120" stroke="#5865F2" stroke-width="1.5" stroke-dasharray="2 2"/>
+          <line x1="80" y1="120" x2="160" y2="60" stroke="#5865F2" stroke-width="1.5"/>
+          <line x1="160" y1="60" x2="220" y2="180" stroke="#5865F2" stroke-width="1.5" stroke-dasharray="2 2"/>
+          <circle cx="20" cy="50" r="3" fill="#5865F2"/>
+          <circle cx="80" cy="120" r="3" fill="#5865F2"/>
+          <circle cx="160" cy="60" r="3" fill="#5865F2"/>
+        </svg>
 
-  <rect x="338" y="292" width="10" height="10" rx="2" fill="#EF4444" stroke="#000" stroke-width="1.5"/>
-  <text x="343" y="300" text-anchor="middle" font-size="8" fill="white" font-weight="900">✗</text>
-  <text x="354" y="300" font-size="8.5" fill="black" font-family="Outfit" font-weight="700">Absent — CN · 14:00</text>
+        <!-- Stage 1 View: UPLOADER -->
+        <div class="upload-stage-view" style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(255,255,255,0.92); z-index:4; transition: opacity 0.5s;">
+          <div style="font-size:2.8rem; margin-bottom:8px; animation: pulseUpload 1.5s infinite ease-in-out;">📤</div>
+          <div style="font-family:'Outfit', sans-serif; font-size:0.85rem; font-weight:900; color:#111; text-transform:uppercase; letter-spacing:0.02em;">Uploading media...</div>
+          <div style="font-family:monospace; font-size:0.6rem; color:var(--color-gray); margin-top:4px;">Resolving source: classroom_photo.png</div>
+        </div>
 
-  <rect x="338" y="310" width="10" height="10" rx="2" fill="#22C55E" stroke="#000" stroke-width="1.5"/>
-  <text x="343" y="318" text-anchor="middle" font-size="8" fill="white" font-weight="900">✓</text>
-  <text x="354" y="318" font-size="8.5" fill="black" font-family="Outfit" font-weight="700">Present — OS · 16:00</text>
-</svg>"""
+        <!-- Stage 2+ View: CLASSROOM PHOTO + LASER -->
+        <div class="scan-stage-view" style="position:absolute; inset:0; display:block;">
+          <!-- Laser sweep line -->
+          <div class="scanner-bar" style="position:absolute; left:0; width:100%; height:4px; background:linear-gradient(90deg, transparent, #22C55E, transparent); box-shadow:0 0 10px rgba(34,197,94,0.8); z-index:5;"></div>
+
+          <!-- Student Face 1 Box -->
+          <div class="student-face-node s1" style="position:absolute; top:25%; left:12%; width:100px; height:100px; transition: opacity 0.3s; opacity:0;">
+            <div class="face-box" style="position:absolute; inset:8px; border:3px solid #22C55E; border-radius:6px;">
+              <div class="corner tl" style="position:absolute; width:10px; height:10px; border:2px solid #22C55E; top:-2px; left:-2px; border-right:0; border-bottom:0;"></div>
+              <div class="corner tr" style="position:absolute; width:10px; height:10px; border:2px solid #22C55E; top:-2px; right:-2px; border-left:0; border-bottom:0;"></div>
+              <div class="corner bl" style="position:absolute; width:10px; height:10px; border:2px solid #22C55E; bottom:-2px; left:-2px; border-right:0; border-top:0;"></div>
+              <div class="corner br" style="position:absolute; width:10px; height:10px; border:2px solid #22C55E; bottom:-2px; right:-2px; border-left:0; border-top:0;"></div>
+              <span class="face-tag face-name-lbl" style="position:absolute; bottom:-24px; left:50%; transform:translateX(-50%); background:#22C55E; color:#fff; font-size:0.65rem; font-weight:800; padding:2px 6px; border-radius:4px; border:1.5px solid #111; white-space:nowrap; box-shadow:1.5px 1.5px 0 #111; font-family:'Outfit',sans-serif; opacity:0; transition: opacity 0.3s;">Rohan · Verified 98%</span>
+            </div>
+            <!-- Face landmarks mesh -->
+            <svg viewBox="0 0 100 100" style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none;">
+              <circle cx="35" cy="40" r="2" fill="#22C55E"/>
+              <circle cx="65" cy="40" r="2" fill="#22C55E"/>
+              <circle cx="50" cy="55" r="2" fill="#22C55E"/>
+              <path d="M 40,70 Q 50,75 60,70" fill="none" stroke="#22C55E" stroke-width="1.5"/>
+              <line x1="35" y1="40" x2="50" y2="55" stroke="rgba(34, 197, 94, 0.4)" stroke-width="1"/>
+              <line x1="65" y1="40" x2="50" y2="55" stroke="rgba(34, 197, 94, 0.4)" stroke-width="1"/>
+            </svg>
+          </div>
+          
+          <!-- Student Face 2 Box -->
+          <div class="student-face-node s2" style="position:absolute; top:20%; right:12%; width:90px; height:90px; transition: opacity 0.3s; opacity:0;">
+            <div class="face-box" style="position:absolute; inset:8px; border:3px solid #5865F2; border-radius:6px;">
+              <div class="corner tl" style="position:absolute; width:10px; height:10px; border:2px solid #5865F2; top:-2px; left:-2px; border-right:0; border-bottom:0;"></div>
+              <div class="corner tr" style="position:absolute; width:10px; height:10px; border:2px solid #5865F2; top:-2px; right:-2px; border-left:0; border-bottom:0;"></div>
+              <div class="corner bl" style="position:absolute; width:10px; height:10px; border:2px solid #5865F2; bottom:-2px; left:-2px; border-right:0; border-top:0;"></div>
+              <div class="corner br" style="position:absolute; width:10px; height:10px; border:2px solid #5865F2; bottom:-2px; right:-2px; border-left:0; border-top:0;"></div>
+              <span class="face-tag face-name-lbl" style="position:absolute; bottom:-24px; left:50%; transform:translateX(-50%); background:#5865F2; color:#fff; font-size:0.65rem; font-weight:800; padding:2px 6px; border-radius:4px; border:1.5px solid #111; white-space:nowrap; box-shadow:1.5px 1.5px 0 #111; font-family:'Outfit',sans-serif; opacity:0; transition: opacity 0.3s;">Sneha · Verified 96%</span>
+            </div>
+            <!-- Face landmarks mesh -->
+            <svg viewBox="0 0 100 100" style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none;">
+              <circle cx="35" cy="40" r="2" fill="#5865F2"/>
+              <circle cx="65" cy="40" r="2" fill="#5865F2"/>
+              <circle cx="50" cy="55" r="2" fill="#5865F2"/>
+              <path d="M 40,70 Q 50,73 60,70" fill="none" stroke="#5865F2" stroke-width="1.5"/>
+              <line x1="35" y1="40" x2="50" y2="55" stroke="rgba(88, 101, 242, 0.4)" stroke-width="1"/>
+              <line x1="65" y1="40" x2="50" y2="55" stroke="rgba(88, 101, 242, 0.4)" stroke-width="1"/>
+            </svg>
+          </div>
+
+          <!-- Present Status Badges -->
+          <div class="status-badge s1-badge" style="position:absolute; top:25%; left:12%; background:#22C55E; color:#fff; font-size:0.55rem; font-weight:900; padding:2px 6px; border:1.5px solid #000; border-radius:4px; box-shadow:1.5px 1.5px 0 #000; opacity:0; transition: opacity 0.3s; z-index:6; font-family:'Outfit', sans-serif;">✅ PRESENT</div>
+          <div class="status-badge s2-badge" style="position:absolute; top:20%; right:12%; background:#22C55E; color:#fff; font-size:0.55rem; font-weight:900; padding:2px 6px; border:1.5px solid #000; border-radius:4px; box-shadow:1.5px 1.5px 0 #000; opacity:0; transition: opacity 0.3s; z-index:6; font-family:'Outfit', sans-serif;">✅ PRESENT</div>
+        </div>
+
+        <!-- Live Waveform Visualizer -->
+        <div class="waveform-container" style="position:absolute; bottom:8px; left:8px; display:flex; gap:3px; align-items:flex-end; height:18px; z-index:6;">
+          <div class="wave-bar" style="width:3px; background:#22C55E; border-radius:2px; height:80%; animation:wavePulse 1.2s infinite ease-in-out; animation-delay:0.1s;"></div>
+          <div class="wave-bar" style="width:3px; background:#22C55E; border-radius:2px; height:40%; animation:wavePulse 1.2s infinite ease-in-out; animation-delay:0.3s;"></div>
+          <div class="wave-bar" style="width:3px; background:#22C55E; border-radius:2px; height:95%; animation:wavePulse 1.2s infinite ease-in-out; animation-delay:0.5s;"></div>
+          <div class="wave-bar" style="width:3px; background:#22C55E; border-radius:2px; height:60%; animation:wavePulse 1.2s infinite ease-in-out; animation-delay:0.2s;"></div>
+        </div>
+
+        <!-- Success Notification Popup -->
+        <div class="success-popup" style="position:absolute; bottom:8px; right:8px; background:#FFF; border:2px solid #111; border-radius:4px; padding:4px 8px; display:flex; align-items:center; gap:5px; box-shadow:2px 2px 0 #111; opacity:0; transition: transform 0.5s, opacity 0.5s; z-index:7;">
+          <div class="success-icon" style="width:14px; height:14px; background:#22C55E; border:1px solid #111; border-radius:50%; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:0.6rem;">✓</div>
+          <div style="text-align:left;">
+            <span class="success-title" style="font-size:0.6rem; font-weight:900; color:#22C55E; display:block; line-height:1;">CHECK-IN OK</span>
+            <span class="success-sub" style="font-size:0.52rem; font-weight:700; color:#555; display:block;">Class Roll updated</span>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+    
+    <!-- right side: panel -->
+    <div class="right-pane" style="flex:0.85; display:flex; flex-direction:column; background:#ffffff; border-left:2px solid #111111; height:100%;">
+      <div class="verification-panel" style="padding:14px; border-bottom:2px solid #111111; font-family:'Outfit',sans-serif; text-align:left;">
+        <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="panel-badge" style="font-size:0.65rem; font-weight:800; text-transform:uppercase; color:#64748b;">Telemetry</span>
+          <div class="verified-indicator" style="background:rgba(34,197,94,0.12); color:#22C55E; border:1.5px solid #22C55E; padding:2px 6px; border-radius:4px; font-size:0.65rem; font-weight:800; display:flex; align-items:center; gap:4px;">
+            <span class="vi-dot" style="width:5px; height:5px; background:#22C55E; border-radius:50%;"></span> ACTIVE
+          </div>
+        </div>
+        <div class="panel-title" style="font-size:0.9rem; font-weight:900; text-transform:uppercase; color:#111; margin-top:4px; margin-bottom:8px;">REAL-TIME DATABASE</div>
+        
+        <div class="panel-details" style="display:flex; flex-direction:column; gap:6px;">
+          <div class="detail-row" style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="detail-label" style="font-size:0.65rem; color:#64748b; font-weight:600;">SUBJECTS</span>
+            <span class="detail-val" style="font-size:0.8rem; color:#111; font-weight:800;">{total_subjects}</span>
+          </div>
+          <div class="detail-row" style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="detail-label" style="font-size:0.65rem; color:#64748b; font-weight:600;">STUDENTS</span>
+            <span class="detail-val" style="font-size:0.8rem; color:#111; font-weight:800;">{total_students}</span>
+          </div>
+          <div class="detail-row" style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="detail-label" style="font-size:0.65rem; color:#64748b; font-weight:600;">ATTENDANCE RATE</span>
+            <span class="detail-val" style="font-size:0.8rem; color:#5865F2; font-weight:800;">{attendance_pct:.1f}%</span>
+          </div>
+          <div class="detail-row" style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="detail-label" style="font-size:0.65rem; color:#64748b; font-weight:600;">SERVER TIME</span>
+            <span class="detail-val" style="font-size:0.8rem; color:#111; font-weight:800;">{current_time_str}</span>
+          </div>
+        </div>
+        
+        <!-- Mini SVG Trend Graph -->
+        <div style="margin-top:8px; text-align:left;">
+          <span class="detail-label" style="font-size:0.65rem; color:#64748b; font-weight:600; display:block; margin-bottom:4px;">WEEKLY ACTIVITY TREND</span>
+          <svg viewBox="0 0 160 30" width="100%" height="24" style="background:#FAFAFA; border:1.5px solid #111111; border-radius:4px;">
+            <path d="M 0,20 Q 20,5 40,15 T 80,10 T 120,25 T 160,5" fill="none" stroke="#5865F2" stroke-width="2"/>
+            <path d="M 0,20 Q 20,5 40,15 T 80,10 T 120,25 T 160,5 L 160,30 L 0,30 Z" fill="rgba(88,101,242,0.15)" stroke="none"/>
+          </svg>
+        </div>
+      </div>
+      
+      <div class="activity-feed" style="padding:14px; flex-grow:1; display:flex; flex-direction:column; font-family:'Outfit',sans-serif; text-align:left;">
+        <div class="feed-title" style="font-size:0.75rem; font-weight:900; text-transform:uppercase; color:#111; margin-bottom:8px;">RECENT CHECKS</div>
+        <div class="feed-list" style="display:flex; flex-direction:column; gap:6px; overflow-y:auto; max-height:130px;">
+          {activity_items_html}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Live Dashboard Panel below the scanner window -->
+<div class="live-dashboard-panel" style="background:#FFFFFF; border:3px solid #000000; border-radius:12px; box-shadow:4px 4px 0 #000000; padding:16px; margin-top:20px; text-align:left; font-family:'Outfit',sans-serif;">
+  <div style="font-size:0.75rem; font-weight:900; color:var(--color-primary); letter-spacing:0.05em; text-transform:uppercase; margin-bottom:12px;">📊 LIVE TELEMETRY DECK</div>
+  <div class="metrics-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px;">
+    <div class="metric-item">
+      <span style="font-size:0.6rem; color:var(--color-gray); font-weight:800; text-transform:uppercase; display:block;">CLASS</span>
+      <span style="font-size:0.95rem; font-weight:900; color:#111111;">CSE Core</span>
+    </div>
+    <div class="metric-item">
+      <span style="font-size:0.6rem; color:var(--color-gray); font-weight:800; text-transform:uppercase; display:block;">SECTION</span>
+      <span style="font-size:0.95rem; font-weight:900; color:#111111;">A & B</span>
+    </div>
+    <div class="metric-item">
+      <span style="font-size:0.6rem; color:var(--color-gray); font-weight:800; text-transform:uppercase; display:block;">TOTAL STUDENTS</span>
+      <span style="font-size:0.95rem; font-weight:900; color:#111111;">{total_students}</span>
+    </div>
+    <div class="metric-item">
+      <span style="font-size:0.6rem; color:var(--color-gray); font-weight:800; text-transform:uppercase; display:block;">ACCURACY</span>
+      <span style="font-size:0.95rem; font-weight:900; color:#22C55E;">98.6%</span>
+    </div>
+    <div class="metric-item">
+      <span style="font-size:0.6rem; color:var(--color-gray); font-weight:800; text-transform:uppercase; display:block;">PRESENT</span>
+      <span style="font-size:0.95rem; font-weight:900; color:#22C55E;" class="live-present-val">{present_count}</span>
+    </div>
+    <div class="metric-item">
+      <span style="font-size:0.6rem; color:var(--color-gray); font-weight:800; text-transform:uppercase; display:block;">ABSENT</span>
+      <span style="font-size:0.95rem; font-weight:900; color:#EF4444;" class="live-absent-val">{absent_count}</span>
+    </div>
+    <div class="metric-item">
+      <span style="font-size:0.6rem; color:var(--color-gray); font-weight:800; text-transform:uppercase; display:block;">LAST SCAN</span>
+      <span style="font-size:0.95rem; font-weight:900; color:#111111;">{current_time_str}</span>
+    </div>
+    <div class="metric-item">
+      <span style="font-size:0.6rem; color:var(--color-gray); font-weight:800; text-transform:uppercase; display:block;">ATTENDANCE</span>
+      <span style="font-size:0.95rem; font-weight:900; color:#5865F2;" class="live-rate-val">{attendance_pct:.1f}%</span>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript Stage Loop Controller -->
+<script>
+  (function() {{
+    var container = document.querySelector(".demo-scanner-container");
+    if (!container) return;
+    var stage = 1;
+    setInterval(function() {{
+      stage = (stage % 5) + 1;
+      container.setAttribute("data-stage", stage);
+      
+      // Select metric values in the telemetry grid
+      var presentEl = document.querySelector(".live-present-val");
+      var absentEl = document.querySelector(".live-absent-val");
+      var rateEl = document.querySelector(".live-rate-val");
+      
+      if (presentEl && absentEl && rateEl) {{
+        if (stage === 1 || stage === 2) {{
+          presentEl.textContent = "{max(0, present_count - 2)}";
+          absentEl.textContent = "{absent_count + 2}";
+          rateEl.textContent = "{max(0.0, attendance_pct - 1.5):.1f}%";
+        }} else if (stage === 3) {{
+          presentEl.textContent = "{max(0, present_count - 1)}";
+          absentEl.textContent = "{absent_count + 1}";
+          rateEl.textContent = "{max(0.0, attendance_pct - 0.7):.1f}%";
+        }} else if (stage === 4 || stage === 5) {{
+          presentEl.textContent = "{present_count}";
+          absentEl.textContent = "{absent_count}";
+          rateEl.textContent = "{attendance_pct:.1f}%";
+        }}
+      }}
+    }}, 3000);
+  }})();
+</script>
+"""
 
 
 # ── Reusable HTML helpers ─────────────────────────────────────────────────────
-def _section(eyebrow, title, subtitle=""):
+def _section(eyebrow, title, subtitle="", anchor_id=""):
     sub_tag = (f'<div style="font-size:0.95rem;color:#333333;text-align:center;'
                f'max-width:520px;margin:0 auto 2.5rem;line-height:1.65;'
                f'font-family:\'Outfit\',sans-serif;font-weight:600;">{subtitle}</div>') if subtitle else ""
+    anchor_attr = f'id="{anchor_id}"' if anchor_id else ""
     return f"""
-<div style="font-size:0.85rem;font-weight:800;text-transform:uppercase;
+<div {anchor_attr} style="font-size:0.85rem;font-weight:800;text-transform:uppercase;
   letter-spacing:0.08em;color:#5865F2;text-align:center;
-  font-family:\'Outfit\',sans-serif;margin-bottom:8px;margin-top:4rem;">{eyebrow}</div>
+  font-family:'Outfit',sans-serif;margin-bottom:8px;margin-top:4rem;">{eyebrow}</div>
 <div style="font-size:clamp(1.8rem,3vw,2.5rem);font-weight:900;letter-spacing:-0.03em;
   color:#000000;text-align:center;margin-bottom:0.6rem;text-transform:uppercase;
-  font-family:\'Climate Crisis\',sans-serif;line-height:1.1;">{title}</div>
+  font-family:'Climate Crisis',sans-serif;line-height:1.1;">{title}</div>
 {sub_tag}"""
 
 
@@ -190,17 +396,44 @@ div[data-testid="stColumn"]:nth-child(1) .stButton {
   line-height:1.65!important;max-width:520px;margin-bottom:2rem!important;
   font-family:'Outfit',sans-serif!important;font-weight:600;}
 
-/* --- Button custom visual overrides --- */
+html {
+  scroll-behavior: smooth !important;
+}
+
+/* --- Button custom visual overrides with ripple and glow --- */
 div.stButton > button {
-  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: 4px 4px 0 #111111 !important;
 }
 div.stButton > button:hover {
-  transform: translate(-3px, -3px) !important;
-  box-shadow: 6px 6px 0 #111111 !important;
+  transform: translateY(-4px) !important;
+  box-shadow: 7px 7px 0 #111111 !important;
+  border-color: #5865F2 !important;
+  filter: drop-shadow(0 0 10px rgba(88, 101, 242, 0.25)) !important;
 }
 div.stButton > button:active {
-  transform: translate(2px, 2px) !important;
+  transform: translateY(2px) !important;
   box-shadow: 1px 1px 0 #111111 !important;
+}
+div.stButton > button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 140px;
+  height: 140px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  transition: transform 0.5s, opacity 0.5s;
+}
+div.stButton > button:active::after {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  transition: 0s;
 }
 
 /* --- Hero Right Preview Container & Floating elements --- */
@@ -445,13 +678,11 @@ div.stButton > button:active {
 @keyframes facePulse {
   0%, 100% {
     transform: scale(1);
-    border-color: #22C55E;
     box-shadow: 0 0 0px rgba(34, 197, 94, 0);
   }
   50% {
-    transform: scale(1.03);
-    border-color: #5865F2;
-    box-shadow: 0 0 8px rgba(88, 101, 242, 0.4);
+    transform: scale(1.02);
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);
   }
 }
 
@@ -471,7 +702,6 @@ div.stButton > button:active {
   bottom: -24px;
   left: 50%;
   transform: translateX(-50%);
-  background: #22C55E;
   color: #ffffff;
   font-size: 0.65rem;
   font-weight: 800;
@@ -490,15 +720,55 @@ div.stButton > button:active {
   height: 3px;
   background: linear-gradient(90deg, transparent, #22C55E, transparent);
   box-shadow: 0 0 6px rgba(34, 197, 94, 0.7);
-  animation: scanMove 4s infinite ease-in-out;
   pointer-events: none;
 }
 
 @keyframes scanMove {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(380px); }
-  100% { transform: translateY(0); }
+  0% { top: 0%; opacity: 1; }
+  90% { top: 95%; opacity: 1; }
+  100% { top: 100%; opacity: 0; }
 }
+
+@keyframes pulseUpload {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* Stage-based visibility overrides */
+.demo-scanner-container[data-stage="1"] .upload-stage-view { opacity: 1 !important; pointer-events: auto !important; }
+.demo-scanner-container[data-stage="1"] .scan-stage-view { opacity: 0 !important; }
+.demo-scanner-container[data-stage="1"] .success-popup { opacity: 0 !important; transform: translateY(20px) !important; }
+
+.demo-scanner-container[data-stage="2"] .upload-stage-view { opacity: 0 !important; pointer-events: none !important; }
+.demo-scanner-container[data-stage="2"] .scan-stage-view { opacity: 1 !important; }
+.demo-scanner-container[data-stage="2"] .scanner-bar { animation: scanMove 2.5s ease-in-out forwards !important; }
+.demo-scanner-container[data-stage="2"] .student-face-node { opacity: 0 !important; }
+.demo-scanner-container[data-stage="2"] .status-badge { opacity: 0 !important; }
+.demo-scanner-container[data-stage="2"] .success-popup { opacity: 0 !important; transform: translateY(20px) !important; }
+
+.demo-scanner-container[data-stage="3"] .upload-stage-view { opacity: 0 !important; pointer-events: none !important; }
+.demo-scanner-container[data-stage="3"] .scan-stage-view { opacity: 1 !important; }
+.demo-scanner-container[data-stage="3"] .scanner-bar { top: 100% !important; opacity: 0 !important; }
+.demo-scanner-container[data-stage="3"] .student-face-node { opacity: 1 !important; }
+.demo-scanner-container[data-stage="3"] .face-name-lbl { opacity: 1 !important; }
+.demo-scanner-container[data-stage="3"] .status-badge { opacity: 0 !important; }
+.demo-scanner-container[data-stage="3"] .success-popup { opacity: 0 !important; transform: translateY(20px) !important; }
+
+.demo-scanner-container[data-stage="4"] .upload-stage-view { opacity: 0 !important; pointer-events: none !important; }
+.demo-scanner-container[data-stage="4"] .scan-stage-view { opacity: 1 !important; }
+.demo-scanner-container[data-stage="4"] .scanner-bar { top: 100% !important; opacity: 0 !important; }
+.demo-scanner-container[data-stage="4"] .student-face-node { opacity: 1 !important; }
+.demo-scanner-container[data-stage="4"] .face-name-lbl { opacity: 1 !important; }
+.demo-scanner-container[data-stage="4"] .status-badge { opacity: 1 !important; }
+.demo-scanner-container[data-stage="4"] .success-popup { opacity: 0 !important; transform: translateY(20px) !important; }
+
+.demo-scanner-container[data-stage="5"] .upload-stage-view { opacity: 0 !important; pointer-events: none !important; }
+.demo-scanner-container[data-stage="5"] .scan-stage-view { opacity: 1 !important; }
+.demo-scanner-container[data-stage="5"] .scanner-bar { top: 100% !important; opacity: 0 !important; }
+.demo-scanner-container[data-stage="5"] .student-face-node { opacity: 1 !important; }
+.demo-scanner-container[data-stage="5"] .face-name-lbl { opacity: 1 !important; }
+.demo-scanner-container[data-stage="5"] .status-badge { opacity: 1 !important; }
+.demo-scanner-container[data-stage="5"] .success-popup { opacity: 1 !important; transform: translateY(0) !important; }
 
 .live-indicator {
   position: absolute;
@@ -805,7 +1075,7 @@ div.stButton > button:active {
 </div>""", unsafe_allow_html=True)
 
     with rc:
-        st.markdown(_MOCKUP, unsafe_allow_html=True)
+        st.markdown(get_mockup_dashboard_html(), unsafe_allow_html=True)
 
     # ── Stats band ───────────────────────────────────────────────────────────
     st.markdown("""
@@ -995,7 +1265,8 @@ div.stButton > button:active {
     # FEATURES — exactly 4 as per spec (no Voice Attendance)
     # ════════════════════════════════════════════════════════════════════════
     st.markdown(_section("Features", "What SmartAttend Does",
-                         "Four core capabilities that replace manual registers entirely."),
+                         "Four core capabilities that replace manual registers entirely.",
+                         anchor_id="features"),
                 unsafe_allow_html=True)
     st.markdown("""
 <style>
@@ -1074,7 +1345,8 @@ div.stButton > button:active {
     # HOW IT WORKS
     # ════════════════════════════════════════════════════════════════════════
     st.markdown(_section("How It Works", "Up and Running in 4 Steps",
-                         "From first login to your first AI attendance session in under 5 minutes."),
+                         "From first login to your first AI attendance session in under 5 minutes.",
+                         anchor_id="how-it-works"),
                 unsafe_allow_html=True)
     st.markdown("""
 <style>
@@ -1169,7 +1441,7 @@ div.stButton > button:active {
 """, unsafe_allow_html=True)
 
     # ── CTA section ───────────────────────────────────────────────────────────
-    st.markdown(_section("Get Started", "Try SmartAttend Today"),
+    st.markdown(_section("Get Started", "Try SmartAttend Today", anchor_id="about"),
                 unsafe_allow_html=True)
     cta_l, cta_m, cta_r, _ = st.columns([1.5, 1, 1, 1.5])
     with cta_m:
@@ -1182,6 +1454,46 @@ div.stButton > button:active {
                      key="cta_teacher"):
             st.session_state["login_type"] = "teacher"
             st.rerun()
+
+    # Inject background floating particles and JavaScript Mouse-Parallax handler
+    st.markdown("""
+    <!-- Floating background particles -->
+    <div class="particle-container" style="position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;">
+      <div class="particle" style="top: 20%; left: 10%; width: 6px; height: 6px; animation-delay: 0s; animation-duration: 10s;"></div>
+      <div class="particle" style="top: 60%; left: 25%; width: 4px; height: 4px; animation-delay: 2s; animation-duration: 8s;"></div>
+      <div class="particle" style="top: 40%; left: 80%; width: 5px; height: 5px; animation-delay: 1s; animation-duration: 12s;"></div>
+      <div class="particle" style="top: 80%; left: 70%; width: 3px; height: 3px; animation-delay: 3s; animation-duration: 9s;"></div>
+    </div>
+    
+    <style>
+    .particle {
+      position: absolute;
+      background: rgba(88, 101, 242, 0.15);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: floatParticle 10s infinite linear;
+    }
+    @keyframes floatParticle {
+      0% { transform: translateY(100vh) scale(1); opacity: 0; }
+      10% { opacity: 0.8; }
+      90% { opacity: 0.8; }
+      100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
+    }
+    </style>
+    
+    <!-- Mouse parallax script for dashboard-window -->
+    <script>
+      (function() {
+        var card = document.querySelector(".dashboard-window");
+        if (!card) return;
+        document.addEventListener("mousemove", function(e) {
+          var x = (window.innerWidth / 2 - e.clientX) / 45;
+          var y = (window.innerHeight / 2 - e.clientY) / 45;
+          card.style.transform = "perspective(800px) rotateY(" + x + "deg) rotateX(" + y + "deg)";
+        });
+      })();
+    </script>
+    """, unsafe_allow_html=True)
 
     st.markdown('<div style="height:1rem"></div>', unsafe_allow_html=True)
     footer_home()

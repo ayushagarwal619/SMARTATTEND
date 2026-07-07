@@ -107,3 +107,37 @@ def reset_teacher_password(mobile_number, new_password):
     teacher_id = response.data[0]['teacher_id']
     supabase.table("teachers").update({"password": hash_pass(new_password)}).eq("teacher_id", teacher_id).execute()
     return True
+
+
+def get_session_notes(teacher_id, subject_id):
+    import os, json
+    notes_file = os.path.join(os.path.dirname(__file__), "session_notes.json")
+    if not os.path.exists(notes_file):
+        return ""
+    try:
+        with open(notes_file, "r", encoding="utf-8") as f:
+            notes_data = json.load(f)
+        key = f"{teacher_id}_{subject_id}"
+        return notes_data.get(key, "")
+    except Exception:
+        return ""
+
+
+def save_session_notes(teacher_id, subject_id, notes):
+    import os, json
+    notes_file = os.path.join(os.path.dirname(__file__), "session_notes.json")
+    notes_data = {}
+    if os.path.exists(notes_file):
+        try:
+            with open(notes_file, "r", encoding="utf-8") as f:
+                notes_data = json.load(f)
+        except Exception:
+            pass
+    key = f"{teacher_id}_{subject_id}"
+    notes_data[key] = notes
+    try:
+        with open(notes_file, "w", encoding="utf-8") as f:
+            json.dump(notes_data, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception:
+        return False

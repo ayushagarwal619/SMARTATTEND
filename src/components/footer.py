@@ -34,8 +34,8 @@ def footer_home():
     </div>
     <div class="sa-footer-col">
       <h5>Product</h5>
-      <a href="#">Features</a>
-      <a href="#">How It Works</a>
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How It Works</a>
       <a href="#">Changelog</a>
     </div>
     <div class="sa-footer-col">
@@ -53,7 +53,7 @@ def footer_home():
     </div>
   </div>
   <div class="sa-footer-bottom">
-    <span>&copy; 2024 SmartAttend. All rights reserved.</span>
+    <span>&copy; 2026 SmartAttend. All rights reserved.</span>
     <span class="sa-badge">v2.0</span>
   </div>
 </div>
@@ -65,7 +65,7 @@ def footer_dashboard():
 <div style="margin-top:3rem;padding-top:1.25rem;border-top:3px solid #000000;
      display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
   <span style="font-size:0.85rem;color:#000000;font-family:'Outfit',sans-serif;font-weight:700;">
-    &copy; 2024 SmartAttend &mdash; AI-Powered Attendance
+    &copy; 2026 SmartAttend &mdash; AI-Powered Attendance
   </span>
   <span style="font-size:0.85rem;color:#000000;font-family:'Outfit',sans-serif;font-weight:700;">
     Built for Colleges &amp; Universities
