@@ -98,7 +98,7 @@ html, body, [class*="css"] {{
 
 /* ── Typography ── */
 h1 {{
-  font-family: 'Climate Crisis', display, sans-serif !important;
+  font-family: 'Outfit', sans-serif !important;
   font-size: 3.25rem !important;
   font-weight: 900 !important;
   letter-spacing: -0.04em !important;
@@ -107,7 +107,7 @@ h1 {{
   margin-bottom: 0.75rem !important;
 }}
 h2 {{
-  font-family: 'Climate Crisis', display, sans-serif !important;
+  font-family: 'Outfit', sans-serif !important;
   font-size: 1.85rem !important;
   font-weight: 900 !important;
   letter-spacing: -0.03em !important;
