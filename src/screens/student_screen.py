@@ -3127,10 +3127,24 @@ def student_screen():
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-/* --- Page layout structure --- */
+/* --- Page layout structure & centering --- */
+.stApp:has(.student-login-wrap) div[data-testid="stMainBlockContainer"] {
+  max-width: 1200px !important;
+  padding-top: 48px !important;
+  padding-bottom: 48px !important;
+  padding-left: 64px !important;
+  padding-right: 64px !important;
+  min-height: calc(100vh - 96px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+}
+
 .student-login-wrap {
   font-family: 'Inter', sans-serif;
   color: #111111;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
 }
 
 /* Style Back to Home button */
@@ -3155,41 +3169,78 @@ button[kind="secondary"]:active {
   box-shadow: 2px 2px 0 #111111 !important;
 }
 
-/* Precise column alignment overrides */
-div[data-testid="stHorizontalBlock"] {
+/* Precise column layout (Flex/Grid style), widths, gaps, and top alignment */
+div[data-testid="stHorizontalBlock"]:has(.student-login-wrap) {
+  display: flex !important;
+  flex-direction: row !important; /* Force side-by-side columns */
+  flex-wrap: nowrap !important;
+  width: 100% !important;
   gap: 32px !important;
   align-items: flex-start !important;
   margin-top: 0 !important;
   padding-top: 0 !important;
 }
-div[data-testid="stColumn"] {
+
+div[data-testid="stHorizontalBlock"]:has(.student-login-wrap) > div[data-testid="stColumn"] {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+}
+
+div[data-testid="stHorizontalBlock"]:has(.student-login-wrap) > div[data-testid="stColumn"]:nth-of-type(1) {
+  width: 48% !important;
+  flex: 0 0 48% !important;
+  max-width: 48% !important;
+  min-width: 0 !important;
   margin-top: 0 !important;
   padding-top: 0 !important;
 }
-div[data-testid="stColumn"] > div {
-  margin-top: 0 !important;
+div[data-testid="stHorizontalBlock"]:has(.student-login-wrap) > div[data-testid="stColumn"]:nth-of-type(2) {
+  width: 52% !important;
+  flex: 0 0 52% !important;
+  max-width: 52% !important;
+  min-width: 0 !important;
+  margin-top: 140px !important; /* Slightly lower camera card for visual centering next to features */
   padding-top: 0 !important;
 }
-div[data-testid="stColumn"] div[data-testid="stVerticalBlock"] {
-  gap: 0 !important; /* Strip default Streamlit gaps to merge elements */
+
+/* Eliminate default Streamlit padding/margins/heights inside columns */
+div[data-testid="stHorizontalBlock"]:has(.student-login-wrap) div[data-testid="stVerticalBlockBorderWrapper"],
+div[data-testid="stHorizontalBlock"]:has(.student-login-wrap) div[data-testid="stVerticalBlock"] {
   margin-top: 0 !important;
   padding-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+  height: auto !important; /* Disallow vertical stretching & spacing distribution */
 }
-div[data-testid="stColumn"] div[data-testid="element-container"] {
+
+div[data-testid="stHorizontalBlock"]:has(.student-login-wrap) div[data-testid="stVerticalBlock"] {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+}
+
+div[data-testid="stHorizontalBlock"]:has(.student-login-wrap) div[data-testid="stElementContainer"],
+div[data-testid="stHorizontalBlock"]:has(.student-login-wrap) div.element-container,
+div[data-testid="stHorizontalBlock"]:has(.student-login-wrap) div[data-testid="stMarkdown"] {
   margin-top: 0 !important;
   padding-top: 0 !important;
   margin-bottom: 0 !important;
   padding-bottom: 0 !important;
 }
 
-/* Feature card styles (Neo-Brutalist) */
+/* Feature card styles (Neo-Brutalist) with equal spacing (20px) and widths */
 .neo-feat-card {
   background: #ffffff;
   border: 3px solid #111111;
   border-radius: 12px;
   box-shadow: 4px 4px 0 #111111;
   padding: 14px 16px;
-  margin-bottom: 24px !important; /* 24px spacing between cards */
+  margin-bottom: 20px !important; /* Equal spacing 20px */
+  width: 100% !important;
+  box-sizing: border-box !important;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -3230,14 +3281,16 @@ div[data-testid="stColumn"] div[data-testid="element-container"] {
   flex-shrink: 0;
 }
 
-/* Privacy footer card */
+/* Privacy footer card with matching 20px margin-top */
 .neo-privacy-card {
   background: #E8F0FE;
   border: 3px solid #111111;
   border-radius: 12px;
   box-shadow: 4px 4px 0 #111111;
   padding: 14px 16px;
-  margin-top: 24px !important; /* 24px spacing */
+  margin-top: 20px !important; /* Spacing 20px */
+  width: 100% !important;
+  box-sizing: border-box !important;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -3275,6 +3328,9 @@ div[data-testid="stColumn"] div[data-testid="element-container"] {
   position: relative;
   z-index: 2;
   margin-bottom: 0 !important;
+  margin-top: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 .cam-header-left {
   display: flex;
@@ -3314,14 +3370,16 @@ div[data-testid="stColumn"] div[data-testid="element-container"] {
   display: inline-block;
 }
 
-/* Tip card below camera */
+/* Tip card below camera matching width and shadow size */
 .neo-tip-card {
   background: #EAF7EC !important;
   border: 3px solid #111111 !important;
   border-radius: 12px !important;
-  box-shadow: 4px 4px 0 #111111 !important;
+  box-shadow: 6px 6px 0 #111111 !important; /* Match camera shadow */
   padding: 12px 16px !important;
-  margin-top: 24px !important;
+  margin-top: 20px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
   display: flex !important;
   align-items: center !important;
   gap: 12px !important;
@@ -3360,9 +3418,11 @@ div[data-testid="stCameraInput"] {
   background: #ffffff !important;
   padding: 0 24px 24px 24px !important;
   margin-top: 0 !important;
-  margin-bottom: 24px !important; /* Spacing above tip card */
+  margin-bottom: 20px !important; /* Spacing above tip card */
   overflow: hidden !important;
   z-index: 1;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 /* Video container border */
@@ -3372,66 +3432,153 @@ div[data-testid="stCameraInput"] > div {
   overflow: hidden !important;
 }
 
-/* Dashed guide overlay inside stCameraInput */
+/* Aspect ratio logic (16:10) on video preview element, not container */
+div[data-testid="stCameraInput"] video,
+div[data-testid="stCameraInput"] canvas,
+div[data-testid="stCameraInput"] [data-testid="stCameraInputWebcamStyledBox"] {
+  aspect-ratio: 16 / 10 !important;
+  max-height: 480px !important;
+  height: auto !important;
+  object-fit: cover !important;
+}
+
+/* Dashed face guide overlay with target reticle/vector design */
+@keyframes biometric-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1.0) !important;
+    filter: drop-shadow(0 0 2px rgba(99, 102, 241, 0.45)) !important;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.04) !important;
+    filter: drop-shadow(0 0 14px rgba(99, 102, 241, 0.95)) drop-shadow(0 0 22px rgba(236, 72, 153, 0.6)) !important;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.0) !important;
+    filter: drop-shadow(0 0 2px rgba(99, 102, 241, 0.45)) !important;
+  }
+}
+
 div[data-testid="stCameraInput"]::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 200px;
-  height: 260px;
-  border: 3.5px dashed #6366F1;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 9;
+  content: "" !important;
+  position: absolute !important;
+  top: 40% !important; /* Positioned centered over webcam view */
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 200px !important;
+  height: 260px !important;
+  pointer-events: none !important;
+  z-index: 9 !important;
   box-shadow: 0 0 0 9999px rgba(11, 15, 25, 0.45) !important;
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjYwIiB2aWV3Qm94PSIwIDAgMjAwIDI2MCIgZmlsbD0ibm9uZSI+CiAgPCEtLSBEb3R0ZWQgT3ZhbCBpbnNpZGUgU1ZHIC0tPgogIDxlbGxpcHNlIGN4PSIxMDAiIGN5PSIxMzAiIHJ4PSI5NSIgcnk9IjEyNSIgc3Ryb2tlPSIjNjM2NkYxIiBzdHJva2Utd2lkdGg9IjMuNSIgc3Ryb2tlLWRhc2hhcnJheT0iNiw2Ii8+CgogIDwhLS0gQ29ybmVyIEJyYWNrZXRzIC0tPgogIDxwYXRoIGQ9Ik0yNSwyMCBMMTAsMjAgTDEwLDM1IiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBvcGFjaXR5PSIwLjY1Ii8+CiAgPHBhdGggZD0iTTE3NSwyMCBMMTkwLDIwIEwxOTAsMzUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIG9wYWNpdHk9IjAuNjUiLz4KICA8cGF0aCBkPSJNMjUsMjQwIEwxMCwyNDAgTDEwLDIyNSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgb3BhY2l0eT0iMC42NSIvPgogIDxwYXRoIGQ9Ik0xNzUsMjQwIEwxOTAsMjQwIEwxOTAsMjI1IiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBvcGFjaXR5PSIwLjY1Ii8+CgogIDwhLS0gQklPTUVUUklDIEZBQ0UgTUVTSCBHUk9VUCAtLT4KICA8ZyBpZD0iYmlvbWV0cmljLWZhY2UiPgogICAgPCEtLSBPdXRlciBoZWFkIG91dGxpbmUgLS0+CiAgICA8cGF0aCBkPSJNNjUsMTE1IEM2NSw4NSA4MCw3NSAxMDAsNzUgQzEyMCw3NSAxMzUsODUgMTM1LDExNSBDMTM1LDE0MiAxMjgsMTU1IDExOCwxNjggQzExMCwxNzcgMTA1LDE4MCAxMDAsMTgwIEM5NSwxODAgOTAsMTc3IDgyLDE2OCBDNzIsMTU1IDY1LDE0MiA2NSwxMTUgWiIgCiAgICAgICAgICBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIG9wYWNpdHk9IjAuNzUiLz4KICAgIAogICAgPCEtLSBUcmlhbmd1bGF0aW9uIGxhbmRtYXJrIGxpbmVzIC0tPgogICAgPGxpbmUgeDE9IjEwMCIgeTE9IjkyIiB4Mj0iODQiIHkyPSIxMTUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjM1Ii8+CiAgICA8bGluZSB4MT0iMTAwIiB5MT0iOTIiIHgyPSIxMTYiIHkyPSIxMTUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjM1Ii8+CiAgICA8bGluZSB4MT0iMTAwIiB5MT0iOTIiIHgyPSI3MiIgeTI9IjEwOCIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjEiIG9wYWNpdHk9IjAuMzUiLz4KICAgIDxsaW5lIHgxPSIxMDAiIHkxPSI5MiIgeDI9IjEyOCIgeTI9IjEwOCIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjEiIG9wYWNpdHk9IjAuMzUiLz4KCiAgICA8bGluZSB4MT0iODQiIHkxPSIxMTUiIHgyPSIxMTYiIHkyPSIxMTUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjM1Ii8+CiAgICA8bGluZSB4MT0iODQiIHkxPSIxMTUiIHgyPSIxMDAiIHkyPSIxMzIiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjM1Ii8+CiAgICA8bGluZSB4MT0iMTE2IiB5MT0iMTE1IiB4Mj0iMTAwIiB5Mj0iMTMyIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iMC4zNSIvPgogICAgPGxpbmUgeDE9IjcyIiB5MT0iMTA4IiB4Mj0iODQiIHkyPSIxMTUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjM1Ii8+CiAgICA8bGluZSB4MT0iMTI4IiB5MT0iMTA4IiB4Mj0iMTE2IiB5Mj0iMTE1IiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iMC4zNSIvPgoKICAgIDxsaW5lIHgxPSI4NCIgeTE9IjExNSIgeDI9Ijc4IiB5Mj0iMTM4IiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iMC4zNSIvPgogICAgPGxpbmUgeDE9IjExNiIgeTE9IjExNSIgeDI9IjEyMiIgeTI9IjEzOCIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjEiIG9wYWNpdHk9IjAuMzUiLz4KICAgIDxsaW5lIHgxPSIxMDAiIHkxPSIxMzIiIHgyPSI3OCIgeTI9IjEzOCIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjEiIG9wYWNpdHk9IjAuMzUiLz4KICAgIDxsaW5lIHgxPSIxMDAiIHkxPSIxMzIiIHgyPSIxMjIiIHkyPSIxMzgiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjM1Ii8+CiAgICA8bGluZSB4MT0iMTAwIiB5MT0iMTMyIiB4Mj0iMTAwIiB5Mj0iMTYwIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iMC4zNSIvPgoKICAgIDxsaW5lIHgxPSI3OCIgeTE9IjEzOCIgeDI9IjEwMCIgeTI9IjE2MCIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjEiIG9wYWNpdHk9IjAuMzUiLz4KICAgIDxsaW5lIHgxPSIxMjIiIHkxPSIxMzgiIHgyPSIxMDAiIHkyPSIxNjAiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjM1Ii8+CiAgICA8bGluZSB4MT0iNzgiIHkxPSIxMzgiIHgyPSI4NCIgeTI9IjE2MCIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjEiIG9wYWNpdHk9IjAuMzUiLz4KICAgIDxsaW5lIHgxPSIxMjIiIHkxPSIxMzgiIHgyPSIxMTYiIHkyPSIxNjAiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjM1Ii8+CiAgICA8bGluZSB4MT0iODQiIHkxPSIxNjAiIHgyPSIxMDAiIHkyPSIxNjAiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjM1Ii8+CiAgICA8bGluZSB4MT0iMTE2IiB5MT0iMTYwIiB4Mj0iMTAwIiB5Mj0iMTYwIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iMC4zNSIvPgogICAgPGxpbmUgeDE9IjEwMCIgeTE9IjE2MCIgeDI9IjEwMCIgeTI9IjE4MCIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjEiIG9wYWNpdHk9IjAuMzUiLz4KCiAgICA8IS0tIEJpb21ldHJpYyBsYW5kbWFyayBub2RlIGNpcmNsZXMgLS0+CiAgICA8Y2lyY2xlIGN4PSIxMDAiIGN5PSI5MiIgcj0iMy41IiBmaWxsPSIjZmZmZmZmIiBvcGFjaXR5PSIwLjkiLz4KICAgIDxjaXJjbGUgY3g9Ijg0IiBjeT0iMTE1IiByPSI0IiBmaWxsPSIjZmZmZmZmIiBvcGFjaXR5PSIwLjkiLz4KICAgIDxjaXJjbGUgY3g9IjExNiIgY3k9IjExNSIgcj0iNCIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iMC45Ii8+CiAgICA8Y2lyY2xlIGN4PSI3MiIgY3k9IjEwOCIgcj0iMyIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iMC45Ii8+CiAgICA8Y2lyY2xlIGN4PSIxMjgiIGN5PSIxMDgiIHI9IjMiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9IjAuOSIvPgogICAgPGNpcmNsZSBjeD0iMTAwIiBjeT0iMTMyIiByPSI0LjUiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9IjAuOSIvPgogICAgPGNpcmNsZSBjeD0iNzgiIGN5PSIxMzgiIHI9IjMuNSIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iMC45Ii8+CiAgICA8Y2lyY2xlIGN4PSIxMjIiIGN5PSIxMzgiIHI9IjMuNSIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iMC45Ii8+CiAgICA8Y2lyY2xlIGN4PSIxMDAiIGN5PSIxNjAiIHI9IjQiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9IjAuOSIvPgogICAgPGNpcmNsZSBjeD0iODQiIGN5PSIxNjAiIHI9IjMiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9IjAuOSIvPgogICAgPGNpcmNsZSBjeD0iMTE2IiBjeT0iMTYwIiByPSIzIiBmaWxsPSIjZmZmZmZmIiBvcGFjaXR5PSIwLjkiLz4KICAgIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjE4MCIgcj0iMyIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iMC45Ii8+CiAgPC9nPgo8L3N2Zz4=') !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  animation: biometric-pulse 3.5s ease-in-out infinite !important;
+}
+
+/* Set relative positioning context on webcam component container */
+div[data-testid="stCameraInput"] > div {
+  position: relative !important;
+}
+
+@keyframes htmlScan {
+  0% { top: 26%; }
+  50% { top: 59%; }
+  100% { top: 26%; }
+}
+
+/* Glowing biometric horizontal scanning bar */
+div[data-testid="stCameraInput"] > div::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 90px !important;
+  height: 4px !important;
+  border-radius: 2px !important;
+  background: linear-gradient(90deg, rgba(96, 165, 250, 0) 0%, rgba(59, 130, 246, 0.65) 20%, rgba(147, 197, 253, 1) 50%, rgba(59, 130, 246, 0.65) 80%, rgba(96, 165, 250, 0) 100%) !important;
+  box-shadow: 0 0 10px rgba(147, 197, 253, 0.95), 0 0 20px rgba(59, 130, 246, 0.65) !important;
+  z-index: 10 !important;
+  pointer-events: none !important;
+  animation: htmlScan 3.5s ease-in-out infinite !important;
 }
 
 /* Looking guide tag on top */
 div[data-testid="stCameraInput"]::before {
-  content: "✦  Look directly at the camera";
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  background: rgba(11, 15, 25, 0.85);
-  color: #ffffff;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  font-family: 'Inter', sans-serif;
-  z-index: 10;
-  pointer-events: none;
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  content: "✦  Look directly at the camera" !important;
+  position: absolute !important;
+  top: 16px !important;
+  left: 16px !important;
+  background: rgba(11, 15, 25, 0.85) !important;
+  color: #ffffff !important;
+  padding: 8px 14px !important;
+  border-radius: 8px !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+  border: 2px solid #111111 !important;
+  box-shadow: 3px 3px 0 #111111 !important;
+  z-index: 10 !important;
+  font-family: 'Inter', sans-serif !important;
 }
 
-/* Custom override for full-width streamlit button styling inside camera input */
-div[data-testid="stCameraInput"] button {
-  width: 100% !important;
-  margin-top: 12px !important;
-  background: linear-gradient(135deg, #6366F1 0%, #D946EF 100%) !important;
+/* Animated gradient "Take Photo" button styling: hover lift, glow pulse, pressed transitions */
+@keyframes glow-pulse {
+  0% {
+    box-shadow: 4px 4px 0 #111111, 0 0 0 0 rgba(99, 102, 241, 0.4);
+  }
+  70% {
+    box-shadow: 4px 4px 0 #111111, 0 0 0 12px rgba(236, 72, 153, 0);
+  }
+  100% {
+    box-shadow: 4px 4px 0 #111111, 0 0 0 0 rgba(99, 102, 241, 0);
+  }
+}
+
+div[data-testid="stCameraInput"] button[data-testid="stCameraInputButton"],
+div[data-testid="stCameraInput"] button[data-testid="stCameraInputButton"]:disabled,
+div[data-testid="stCameraInput"] button[data-testid="stCameraInputButton"][disabled] {
+  position: relative !important;
+  margin-top: 16px !important;
+  display: flex !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+  background: linear-gradient(135deg, #6366F1 0%, #EC4899 100%) !important; /* Premium gradient style */
   color: #ffffff !important;
   border: 3px solid #111111 !important;
-  box-shadow: 3px 3px 0 #111111 !important;
-  border-radius: 8px !important;
-  font-size: 1rem !important;
+  box-shadow: 4px 4px 0 #111111 !important;
+  border-radius: 12px !important;
+  font-size: 1.05rem !important;
   font-weight: 800 !important;
   font-family: 'Inter', sans-serif !important;
-  padding: 12px 20px !important;
-  display: flex !important;
+  padding: 16px 24px !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 8px !important;
-  transition: transform 100ms ease;
+  gap: 12px !important;
+  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  animation: glow-pulse 2s infinite !important; /* pulsing glow animation */
 }
-div[data-testid="stCameraInput"] button:hover {
-  transform: translate(-2px, -2px) !important;
-  box-shadow: 5px 5px 0 #111111 !important;
+
+div[data-testid="stCameraInput"] button[data-testid="stCameraInputButton"]:hover {
+  transform: translateY(-4px) scale(1.01) !important;
+  box-shadow: 6px 6px 0 #111111, 0 0 20px rgba(99, 102, 241, 0.55) !important;
 }
-div[data-testid="stCameraInput"] button::before {
-  content: "📷" !important;
-  font-size: 1.15rem !important;
+
+div[data-testid="stCameraInput"] button[data-testid="stCameraInputButton"]:active {
+  transform: translateY(2px) !important;
+  box-shadow: 2px 2px 0 #111111 !important;
+}
+div[data-testid="stCameraInput"] button[data-testid="stCameraInputButton"]::before {
+  content: "" !important;
+  display: inline-block !important;
+  width: 18px !important;
+  height: 18px !important;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>') !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
 }
 
 /* Sub-footer at bottom */
@@ -3453,114 +3600,16 @@ div[data-testid="stCameraInput"] button::before {
             st.rerun()
     st.markdown('<div style="height:12px"></div>', unsafe_allow_html=True)
 
+    # Logo block above columns
+    st.markdown(f"""<div style="display:flex;align-items:center;gap:12px;margin-bottom:1.5rem;font-family:'Inter',sans-serif;">{_LOGO}<span style="font-family:'Inter',sans-serif;font-size:1.3rem;font-weight:900;color:#000000;letter-spacing:-0.03em;text-transform:uppercase;">SmartAttend</span></div>""", unsafe_allow_html=True)
+
     lc, rc = st.columns([0.48, 0.52], gap="large", vertical_alignment="top")
 
     with lc:
-        st.markdown(f"""
-<div class="student-login-wrap">
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:1.5rem;">
-    {_LOGO}
-    <span style="font-family:'Inter',sans-serif;font-size:1.3rem;font-weight:900;color:#000000;letter-spacing:-0.03em;text-transform:uppercase;">SmartAttend</span>
-  </div>
-  <h1 style="font-size:2.4rem;font-weight:900;letter-spacing:-0.03em;margin:0 0 0.5rem;font-family:'Inter',sans-serif;">Student Login</h1>
-  <p style="font-size:0.95rem;color:#555555;font-weight:500;margin-bottom:2rem;line-height:1.5;font-family:'Inter',sans-serif;">
-    Sign in instantly using Face ID —<br/>no passwords, no typing, <span style="color:#6366F1;font-weight:700;">just you</span>.
-  </p>
-
-  <!-- Feature Cards -->
-  <div class="neo-feat-card">
-    <div class="neo-feat-icon-wrap" style="background:#EEF2FF;color:#6366F1;">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-    </div>
-    <div class="neo-feat-text-wrap">
-      <div class="neo-feat-title">Instant Face Recognition</div>
-      <div class="neo-feat-desc">Securely verify your identity in real-time</div>
-    </div>
-    <div class="neo-feat-badge">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22C55E" stroke="#111111" stroke-width="2"/><path d="M8 12l3 3 5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
-  </div>
-
-  <div class="neo-feat-card">
-    <div class="neo-feat-icon-wrap" style="background:#ECFDF5;color:#10B981;">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect cx="3" cy="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
-    </div>
-    <div class="neo-feat-text-wrap">
-      <div class="neo-feat-title">View Attendance</div>
-      <div class="neo-feat-desc">Access all your subject-wise attendance</div>
-    </div>
-    <div class="neo-feat-badge">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22C55E" stroke="#111111" stroke-width="2"/><path d="M8 12l3 3 5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
-  </div>
-
-  <div class="neo-feat-card">
-    <div class="neo-feat-icon-wrap" style="background:#FDF2F8;color:#EC4899;">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-    </div>
-    <div class="neo-feat-text-wrap">
-      <div class="neo-feat-title">QR Code Enrollment</div>
-      <div class="neo-feat-desc">Join subjects quickly via QR code</div>
-    </div>
-    <div class="neo-feat-badge">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22C55E" stroke="#111111" stroke-width="2"/><path d="M8 12l3 3 5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
-  </div>
-
-  <div class="neo-feat-card">
-    <div class="neo-feat-icon-wrap" style="background:#FFF7ED;color:#F97316;">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>
-    </div>
-    <div class="neo-feat-text-wrap">
-      <div class="neo-feat-title">Live Analytics</div>
-      <div class="neo-feat-desc">Track trends, performance & history</div>
-    </div>
-    <div class="neo-feat-badge">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22C55E" stroke="#111111" stroke-width="2"/><path d="M8 12l3 3 5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
-  </div>
-
-  <div class="neo-feat-card">
-    <div class="neo-feat-icon-wrap" style="background:#EFF6FF;color:#3B82F6;">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-    </div>
-    <div class="neo-feat-text-wrap">
-      <div class="neo-feat-title">Secure & Private</div>
-      <div class="neo-feat-desc">Your biometric data stays encrypted</div>
-    </div>
-    <div class="neo-feat-badge">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22C55E" stroke="#111111" stroke-width="2"/><path d="M8 12l3 3 5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
-  </div>
-
-  <!-- Privacy Policy Card -->
-  <div class="neo-privacy-card">
-    <div class="neo-privacy-icon-wrap">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-    </div>
-    <div class="neo-privacy-text">
-      Your privacy is our priority.<br/>
-      <span style="font-weight:500;opacity:0.85;">Biometric data is used only for authentication and never shared.</span>
-    </div>
-  </div>
-</div>
-""", unsafe_allow_html=True)
+        st.markdown(f"""<div class="student-login-wrap"><h1 style="font-size:2.4rem;font-weight:900;letter-spacing:-0.03em;margin:0 0 0.5rem;font-family:'Inter',sans-serif;">Student Login</h1><p style="font-size:0.95rem;color:#555555;font-weight:500;margin-bottom:2rem;line-height:1.5;font-family:'Inter',sans-serif;">Sign in instantly using Face ID —<br/>no passwords, no typing, <span style="color:#6366F1;font-weight:700;">just you</span>.</p><!-- Feature Cards --><div class="neo-feat-card"><div class="neo-feat-icon-wrap" style="background:#EEF2FF;color:#6366F1;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div><div class="neo-feat-text-wrap"><div class="neo-feat-title">Instant Face Recognition</div><div class="neo-feat-desc">Securely verify your identity in real-time</div></div><div class="neo-feat-badge"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22C55E" stroke="#111111" stroke-width="2"/><path d="M8 12l3 3 5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div><div class="neo-feat-card"><div class="neo-feat-icon-wrap" style="background:#ECFDF5;color:#10B981;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect cx="3" cy="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></div><div class="neo-feat-text-wrap"><div class="neo-feat-title">View Attendance</div><div class="neo-feat-desc">Access all your subject-wise attendance</div></div><div class="neo-feat-badge"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22C55E" stroke="#111111" stroke-width="2"/><path d="M8 12l3 3 5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div><div class="neo-feat-card"><div class="neo-feat-icon-wrap" style="background:#FDF2F8;color:#EC4899;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div><div class="neo-feat-text-wrap"><div class="neo-feat-title">QR Code Enrollment</div><div class="neo-feat-desc">Join subjects quickly via QR code</div></div><div class="neo-feat-badge"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22C55E" stroke="#111111" stroke-width="2"/><path d="M8 12l3 3 5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div><div class="neo-feat-card"><div class="neo-feat-icon-wrap" style="background:#FFF7ED;color:#F97316;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg></div><div class="neo-feat-text-wrap"><div class="neo-feat-title">Live Analytics</div><div class="neo-feat-desc">Track trends, performance & history</div></div><div class="neo-feat-badge"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22C55E" stroke="#111111" stroke-width="2"/><path d="M8 12l3 3 5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div><div class="neo-feat-card"><div class="neo-feat-icon-wrap" style="background:#EFF6FF;color:#3B82F6;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div class="neo-feat-text-wrap"><div class="neo-feat-title">Secure & Private</div><div class="neo-feat-desc">Your biometric data stays encrypted</div></div><div class="neo-feat-badge"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22C55E" stroke="#111111" stroke-width="2"/><path d="M8 12l3 3 5-5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div><!-- Privacy Policy Card --><div class="neo-privacy-card"><div class="neo-privacy-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div class="neo-privacy-text">Your privacy is our priority.<br/><span style="font-weight:500;opacity:0.85;">Biometric data is used only for authentication and never shared.</span></div></div></div>""", unsafe_allow_html=True)
 
     with rc:
-        st.markdown(f"""
-<div class="cam-card-header">
-  <div class="cam-header-left">
-    <div style="transform: scale(0.95); display: inline-block;">{_LOGO}</div>
-    <div>
-      <div class="cam-brand-title">Sign in with Face ID</div>
-      <div class="cam-brand-subtitle">Position your face in the camera frame below.</div>
-    </div>
-  </div>
-  <div class="cam-status-badge">
-    <span class="status-dot"></span> Camera Active
-  </div>
-</div>
-""", unsafe_allow_html=True)
+        st.markdown(f"""<div class="cam-card-header"><div class="cam-header-left"><div style="transform: scale(0.95); display: inline-block;">{_LOGO}</div><div><div class="cam-brand-title">Sign in with Face ID</div><div class="cam-brand-subtitle">Position your face in the camera frame below.</div></div></div><div class="cam-status-badge"><span class="status-dot"></span> Camera Active</div></div>""", unsafe_allow_html=True)
 
         show_reg = False
         photo = st.camera_input("Look directly at the camera", label_visibility="collapsed")
@@ -3591,17 +3640,7 @@ div[data-testid="stCameraInput"] button::before {
                         st.info("Face not recognised. Register below if you are new.")
                         show_reg = True
 
-        st.markdown(f"""
-<div class="neo-tip-card">
-  <div class="neo-tip-icon-wrap">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-  </div>
-  <div class="neo-tip-text-wrap">
-    <div class="neo-tip-title">Make sure you are in a well-lit area</div>
-    <div class="neo-tip-desc">Remove sunglasses, hats or face coverings for best results.</div>
-  </div>
-</div>
-""", unsafe_allow_html=True)
+        st.markdown(f"""<div class="neo-tip-card"><div class="neo-tip-icon-wrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div class="neo-tip-text-wrap"><div class="neo-tip-title">Make sure you are in a well-lit area</div><div class="neo-tip-desc">Remove sunglasses, hats or face coverings for best results.</div></div></div>""", unsafe_allow_html=True)
 
         if show_reg:
             st.markdown("""
